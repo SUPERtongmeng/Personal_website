@@ -907,6 +907,33 @@ nav.enter.visible .nav-actions {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
 }
+.blog-more {
+  display: block;
+  margin: 24px auto 0;
+  padding: 10px 32px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  color: var(--text-mid);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.blog-more:hover {
+  color: var(--text-dark);
+  border-color: var(--lavender);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--glass-shadow);
+}
+.blog-more span {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+.blog-more:hover span {
+  transform: translateX(4px);
+}
 .blog-card {
   padding: 28px;
   cursor: pointer;

@@ -125,10 +125,39 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   });
 });
 
-document.getElementById('contactForm').addEventListener('submit', function(e) {
+// 联系表单 — 使用 Formspree 发送邮件
+// ⚠️ 请将下方 URL 替换为你自己的 Formspree 表单地址
+// 前往 https://formspree.io 注册免费账号 → 创建表单 → 获取表单 ID
+const FORM_SUBMIT_URL = 'https://formspree.io/f/mwvyvydg';
+
+document.getElementById('contactForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  showToast('✨ 消息已发送！感谢你的联系 💖');
-  this.reset();
+  const btn = this.querySelector('button');
+  const txt = btn.textContent;
+  btn.textContent = '发送中…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(FORM_SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: this.name.value,
+        email: this.email.value,
+        message: this.message.value
+      })
+    });
+    if (res.ok) {
+      showToast('✨ 消息已发送！感谢你的联系 💖');
+      this.reset();
+    } else {
+      showToast('❌ 发送失败，请稍后再试');
+    }
+  } catch {
+    showToast('❌ 网络错误，请稍后再试');
+  }
+  btn.textContent = txt;
+  btn.disabled = false;
 });
 
 // 说点什么 textarea 自适应高度
@@ -162,6 +191,14 @@ document.querySelectorAll('.blog-card').forEach(card => {
     document.getElementById('modalBody').textContent = article.body;
     document.getElementById('modal').classList.add('active');
   });
+});
+
+// "显示更多" 按钮
+document.getElementById('blogMoreBtn')?.addEventListener('click', () => {
+  const toast = document.getElementById('toast');
+  toast.textContent = '更多文章正在路上…';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
 });
 
 document.getElementById('modalClose').addEventListener('click', () => {
