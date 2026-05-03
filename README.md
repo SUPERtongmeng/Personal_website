@@ -24,7 +24,7 @@
 网站已部署在 GitHub Pages：
 
 ```
-https://supertongmeng.github.io/opencode/
+https://supertongmeng.github.io/Personal_website/
 ```
 
 ## 许可

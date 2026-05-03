@@ -1,15 +1,63 @@
-// 载入动画 + 副标题同步
+// 载入动画 — 跟随资源加载进度
+(function initLoader() {
+  const loader = document.getElementById('loader');
+  const loaderName = document.getElementById('loaderName');
+  if (!loaderName || !loader) return;
+
+  // 构建字母
+  const text = 'Xiao Bei';
+  loaderName.innerHTML = '';
+  const chars = [];
+  const colors = ['#A8D5A2','#8BC98A','#70BC73','#56AE5B','transparent','#3D9548','#2D8035','#1E6825'];
+  for (const ch of text) {
+    const span = document.createElement('span');
+    span.textContent = ch === ' ' ? ' ' : ch;
+    loaderName.appendChild(span);
+    chars.push(span);
+  }
+  chars.forEach((el, i) => { if (colors[i]) el.style.color = colors[i]; });
+
+  // 跟踪页面资源（图片、样式表等）
+  const resources = document.querySelectorAll('img');
+  let loaded = 0;
+  const total = resources.length + 1; // +1 代表文档本身
+
+  resources.forEach(img => {
+    if (img.complete) loaded++;
+    else img.addEventListener('load', () => loaded++);
+  });
+
+  function updateProgress() {
+    const ready = document.readyState;
+    // loading ~ 0-20%, interactive ~ 20-90%, complete = 100%
+    let progress = loaded / Math.max(total, 1);
+    if (ready === 'loading') progress = Math.min(progress, 0.25);
+    else if (ready === 'interactive') progress = Math.max(progress, 0.35);
+    else if (ready === 'complete') progress = 1;
+
+    const showCount = Math.floor(progress * chars.length);
+    chars.forEach((el, i) => el.classList.toggle('visible', i < showCount));
+
+    if (ready !== 'complete') requestAnimationFrame(updateProgress);
+  }
+  requestAnimationFrame(updateProgress);
+})();
+
+// 全部加载完成后：退出加载动画 + 启动入场序列
 window.addEventListener('load', () => {
   const loader = document.getElementById('loader');
-  if (loader) {
-    setTimeout(() => {
-      loader.classList.add('loaded');
-      setTimeout(() => { loader.remove(); }, 800);
-    }, 600);
+  const loaderName = document.getElementById('loaderName');
+  if (loaderName) {
+    // 确保所有字母可见
+    loaderName.querySelectorAll('span').forEach(el => el.classList.add('visible'));
   }
-  // 入场序列在 loader 淡出前 200ms 开始
+  if (loader) {
+    setTimeout(() => loader.classList.add('loaded'), 300);
+    setTimeout(() => { loader.remove(); }, 1100);
+  }
+  // 入场序列
   if (typeof startEntrance === 'function') {
-    setTimeout(startEntrance, 400);
+    setTimeout(startEntrance, 200);
   }
 });
 
@@ -931,11 +979,13 @@ function startEntrance() {
     entranceTimers.push(setTimeout(fn, delay));
   };
 
-  // 1. greeting slide down
+  // 1. nav slide down + greeting slide down
+  const nav = document.querySelector('#navbar');
+  if (nav) addTimer(() => nav.classList.add('visible'), 500);
   const greeting = document.querySelector('.hero-greeting');
-  if (greeting) addTimer(() => greeting.classList.add('visible'), 0);
+  if (greeting) addTimer(() => greeting.classList.add('visible'), 300);
 
-  // 2. title bottom-left pop + avatar orbit
+  // 2. title bottom-left pop + avatar orbit (sync with loader expand)
   const title = document.querySelector('.hero h1');
   if (title) addTimer(() => title.classList.add('visible'), 400);
   const orbit = document.querySelector('.avatar-orbit');
@@ -945,25 +995,28 @@ function startEntrance() {
   if (heroSubtitle) {
     const chars = heroSubtitle.querySelectorAll('.char');
     chars.forEach((el, i) => {
-      addTimer(() => el.classList.add('visible'), 900 + i * 60);
+      addTimer(() => el.classList.add('visible'), 600 + i * 60);
     });
   }
 
   // 4. music card fade in
   const music = document.querySelector('.hero-music');
-  if (music) addTimer(() => music.classList.add('visible'), 1500);
+  if (music) addTimer(() => music.classList.add('visible'), 1200);
 
   // 5. quote fade in
   const quote = document.querySelector('.hero-quote');
-  if (quote) addTimer(() => quote.classList.add('visible'), 2000);
+  if (quote) addTimer(() => quote.classList.add('visible'), 1700);
 
-  // 6. scroll elements
+  // 6. scroll elements (mouse icon first, then text)
   const scrollInd = document.querySelector('.scroll-indicator');
   const scrollTxt = document.querySelector('.scroll-text');
   if (scrollInd) addTimer(() => scrollInd.classList.add('visible'), 2600);
   if (scrollTxt) addTimer(() => scrollTxt.classList.add('visible'), 2600);
 
-  // 7. (music card .enter already removed, no cleanup needed)
+  // 7. remove .enter from nav so scroll transition isn't blocked
+  addTimer(() => {
+    document.querySelector('#navbar')?.classList.remove('enter');
+  }, 1200);
 }
 
 // 立即构建字幕 DOM 占位
