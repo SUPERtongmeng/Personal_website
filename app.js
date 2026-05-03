@@ -129,9 +129,20 @@ document.querySelectorAll('.nav-links a').forEach(link => {
 // ⚠️ 请将下方 URL 替换为你自己的 Formspree 表单地址
 // 前往 https://formspree.io 注册免费账号 → 创建表单 → 获取表单 ID
 const FORM_SUBMIT_URL = 'https://formspree.io/f/mwvyvydg';
+let lastFormSubmit = 0;
+const FORM_COOLDOWN = 60_000; // 60 秒冷却
 
 document.getElementById('contactForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+
+  const now = Date.now();
+  const elapsed = now - lastFormSubmit;
+  if (lastFormSubmit > 0 && elapsed < FORM_COOLDOWN) {
+    const remain = Math.ceil((FORM_COOLDOWN - elapsed) / 1000);
+    showToast(`⏳ 请 ${remain} 秒后再试`);
+    return;
+  }
+
   const btn = this.querySelector('button');
   const txt = btn.textContent;
   btn.textContent = '发送中…';
@@ -148,7 +159,8 @@ document.getElementById('contactForm').addEventListener('submit', async function
       })
     });
     if (res.ok) {
-      showToast('✨ 消息已发送！感谢你的联系 💖');
+      showToast('消息已发送，感谢你的联系！');
+      lastFormSubmit = Date.now();
       this.reset();
     } else {
       showToast('❌ 发送失败，请稍后再试');
