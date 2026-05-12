@@ -23,6 +23,16 @@
   --glow-color-6: rgba(212, 181, 226, 0.25);
   --radius: 20px;
   --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* z-index 层级系统 */
+  --z-particles: 0;
+  --z-base: 1;
+  --z-avatar: 2;
+  --z-interactive: 10;
+  --z-fixed: 100;
+  --z-overlay: 1000;
+  --z-toast: 2000;
+  --z-loader: 9999;
 }
 
 * {
@@ -49,7 +59,7 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-particles);
   overflow: hidden;
 }
 .particle {
@@ -75,7 +85,7 @@ nav {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   padding: 0 44px;
   height: 74px;
   display: grid;
@@ -160,7 +170,7 @@ nav.scrolled {
 
 section {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   padding: 100px 20px;
   max-width: 1100px;
   margin: 0 auto;
@@ -174,7 +184,7 @@ section {
   margin-top: -30px;
   font-family: 'Quicksand', sans-serif;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   color: var(--lavender);
   letter-spacing: 0.7em;
   padding-inline-start: 0.7em;
@@ -221,7 +231,7 @@ section {
   justify-content: center;
   text-align: center;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   padding: 130px 20px 80px;
 }
 .hero-inner {
@@ -233,7 +243,7 @@ section {
   margin: 0 auto;
   gap: 60px;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .hero-left {
   flex: 1;
@@ -306,7 +316,7 @@ section {
 .orbit-1 {
   width: 340px;
   height: 340px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .orbit-1 .orbit-track {
   animation: orbitSpin 8s linear infinite;
@@ -314,7 +324,7 @@ section {
 .orbit-2 {
   width: 420px;
   height: 420px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .orbit-2 .orbit-track {
   animation: orbitSpin 14s linear infinite reverse;
@@ -334,7 +344,7 @@ section {
   display: block;
   margin-bottom: 25px;
   position: relative;
-  z-index: 2;
+  z-index: var(--z-avatar);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--lavender) 15%, transparent),
     0 12px 40px var(--glow-color-4),
@@ -685,7 +695,12 @@ nav.enter.visible .nav-actions {
   align-items: center;
   justify-content: center;
   position: relative;
-  z-index: 10;
+  z-index: var(--z-interactive);
+  outline: none;
+}
+.hero-music-btn:focus,
+.hero-music-btn:focus-visible {
+  outline: none;
 }
 .hero-music-btn:hover {
   background: rgba(255,182,193,0.35);
@@ -816,14 +831,14 @@ nav.enter.visible .nav-actions {
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-particles);
 }
 .about-card:hover::before {
   opacity: 1;
 }
 .about-card > * {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .skill-item::before {
@@ -838,14 +853,14 @@ nav.enter.visible .nav-actions {
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-particles);
 }
 .skill-item:hover::before {
   opacity: 1;
 }
 .skill-item > * {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .skills-grid {
@@ -1063,7 +1078,7 @@ nav.enter.visible .nav-actions {
 
 footer {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   text-align: center;
   padding: 40px 20px;
   color: var(--text-light);
@@ -1088,7 +1103,7 @@ footer {
   inset: 0;
   background: rgba(0,0,0,0.25);
   backdrop-filter: blur(6px);
-  z-index: 2000;
+  z-index: var(--z-overlay);
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -1100,6 +1115,7 @@ footer {
   padding: 35px;
   position: relative;
   animation: modalIn 0.35s ease;
+  color: #fff;
 }
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.9) translateY(20px); }
@@ -1121,9 +1137,10 @@ footer {
   font-family: 'Quicksand', sans-serif;
   margin-bottom: 12px;
   font-size: 1.4rem;
+  color: #fff;
 }
 .modal-content p {
-  color: var(--text-mid);
+  color: rgba(255,255,255,0.8);
   line-height: 1.8;
   font-size: 0.95rem;
 }
@@ -1132,7 +1149,7 @@ footer {
   position: fixed;
   bottom: 90px;
   right: 24px;
-  z-index: 3000;
+  z-index: var(--z-toast);
   padding: 14px 24px;
   border-radius: 12px;
   background: rgba(255,255,255,0.8);
@@ -1864,7 +1881,7 @@ body {
   inset: 0;
   background: rgba(0,0,0,0.25);
   backdrop-filter: blur(8px);
-  z-index: 2100;
+  z-index: var(--z-overlay);
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -2181,7 +2198,7 @@ body {
 #loader {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-loader);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -221,14 +221,15 @@ document.getElementById('modal').addEventListener('click', (e) => {
 });
 
 const quotes = [
-  { text: '代码如诗，简洁为美。', author: '— 编程箴言' },
-  { text: '设计不只是它的外观和感觉，更是它的工作方式。', author: '— Steve Jobs' },
-  { text: '保持简单，保持愚蠢。', author: '— Keep It Simple' },
-  { text: '在混沌中寻找简单。', author: '— Albert Einstein' },
-  { text: '最好的代码是最少的代码。', author: '— 编程格言' },
-  { text: '做正确的事，而不是容易的事。', author: '— 人生哲理' },
-  { text: '想象力比知识更重要。', author: '— Albert Einstein' },
-  { text: '每一次细微的改变，都在塑造更好的自己。', author: '— 成长语录' },
+  { text: '代码如诗，简洁为美', author: '— 编程箴言' },
+  { text: '设计不只是它的外观和感觉，更是它的工作方式', author: '— Steve Jobs' },
+  { text: '保持简单，保持愚蠢', author: '— Keep It Simple' },
+  { text: '在混沌中寻找简单', author: '— Albert Einstein' },
+  { text: '最好的代码是最少的代码', author: '— 编程格言' },
+  { text: '做正确的事，而不是容易的事', author: '— 人生哲理' },
+  { text: '想象力比知识更重要', author: '— Albert Einstein' },
+  { text: '每一次细微的改变，都在塑造更好的自己', author: '— 成长语录' },
+  
 ];
 
 const quoteText = document.getElementById('quoteText');
@@ -995,7 +996,7 @@ if (document.getElementById('toolsTabBar')) {
 
 // ===== hero 入场序列 =====
 const heroSubtitle = document.getElementById('heroSubtitle');
-const subtitleLines = ['全栈开发者 · 热爱设计、音乐与创造', '用代码编织美好的数字体验'];
+const subtitleLines = ['城市热能专业在读 · AI 学习者 · 技术探索者', '从代码到 AI提示词，持续折腾中...'];
 let entranceTimers = [];
 
 function buildHeroChars() {
@@ -1071,3 +1072,47 @@ function startEntrance() {
 // 立即构建字幕 DOM 占位
 buildHeroChars();
 
+// ===== 返回顶部按钮 =====
+const backToTop = document.createElement('button');
+backToTop.id = 'backToTop';
+backToTop.innerHTML = '↑';
+backToTop.style.cssText = 'position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,0.4);color:#fff;font-size:20px;cursor:pointer;opacity:0;transition:opacity 0.3s,transform 0.3s;z-index:100;backdrop-filter:blur(8px);';
+document.body.appendChild(backToTop);
+
+window.addEventListener('scroll', () => {
+  backToTop.style.opacity = window.scrollY > 400 ? '1' : '0';
+  backToTop.style.transform = window.scrollY > 400 ? 'translateY(0)' : 'translateY(20px)';
+});
+backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ===== 图片懒加载失败降级 =====
+document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+  img.addEventListener('error', () => {
+    img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="%23ddd" width="40" height="40"/><text fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="12">?</text></svg>';
+    img.style.opacity = '0.6';
+  });
+});
+
+// ===== 控制台彩蛋 =====
+console.log('%c Xiao Bei ', 'background:#56AE5B;color:#fff;padding:4px 12px;border-radius:4px;font-weight:bold;', '欢迎访问我的个人网站！');
+console.log('%c 开源地址: https://github.com/SUPERtongmeng/Personal_website ', 'color:#56AE5B;');
+
+// ===== 键盘快捷键 =====
+document.addEventListener('keydown', (e) => {
+  // Space: 播放/暂停音乐（不在输入框时）
+  if (e.code === 'Space' && !['INPUT','TEXTAREA'].includes(e.target.tagName)) {
+    e.preventDefault();
+    togglePlay();
+  }
+  // ← / →: 上一首 / 下一首
+  if (e.key === 'ArrowLeft' && e.altKey) {
+    e.preventDefault();
+    prevTrack();
+  }
+  if (e.key === 'ArrowRight' && e.altKey) {
+    e.preventDefault();
+    nextTrack();
+  }
+});
