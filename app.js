@@ -86,13 +86,16 @@ skillFills.forEach(el => skillObserver.observe(el));
 const navbar = document.getElementById('navbar');
 const scrollIndicator = document.querySelector('.scroll-indicator');
 const scrollText = document.querySelector('.scroll-text');
+let scrollIndicatorReady = false;
 const navSections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav-links a');
 window.addEventListener('scroll', () => {
   navbar.classList.toggle('scrolled', window.scrollY > 60);
   const fadeOut = Math.max(0, 1 - window.scrollY / 700);
-  if (scrollIndicator) scrollIndicator.style.opacity = fadeOut;
-  if (scrollText) scrollText.style.opacity = fadeOut;
+  if (scrollIndicatorReady) {
+    if (scrollIndicator) scrollIndicator.style.opacity = fadeOut;
+    if (scrollText) scrollText.style.opacity = fadeOut;
+  }
   let current = '';
   const maxY = document.documentElement.scrollHeight - window.innerHeight;
   if (window.scrollY >= maxY - 50) {
@@ -123,6 +126,65 @@ document.querySelectorAll('.nav-links a').forEach(link => {
       window.scrollTo({ top: target.offsetTop - offset, behavior: 'smooth' });
     }
   });
+});
+
+// ========== 底层网格轻微视差 ==========
+const bgGrid = document.querySelector('.bg-grid');
+const gridHoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)');
+let gridBgRaf = null;
+let gridFocusActive = false;
+let gridFocusX = window.innerWidth * 0.5;
+let gridFocusY = window.innerHeight * 0.32;
+
+function getGridRelativePoint(clientX, clientY) {
+  if (!bgGrid) return { x: clientX, y: clientY };
+  const rect = bgGrid.getBoundingClientRect();
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
+function updateGridBackground() {
+  if (!bgGrid) return;
+  const offsetY = Math.max(-24, Math.min(24, window.scrollY * -0.08));
+  bgGrid.style.transform = `translate3d(0, ${offsetY.toFixed(2)}px, 0)`;
+  bgGrid.style.setProperty('--grid-focus-x', `${gridFocusX.toFixed(2)}px`);
+  bgGrid.style.setProperty('--grid-focus-y', `${gridFocusY.toFixed(2)}px`);
+  bgGrid.style.setProperty('--grid-focus-opacity', (gridFocusActive && gridHoverCapable.matches) ? '1' : '0');
+}
+
+function queueGridBackgroundUpdate() {
+  if (gridBgRaf) return;
+  gridBgRaf = requestAnimationFrame(() => {
+    gridBgRaf = null;
+    updateGridBackground();
+  });
+}
+
+updateGridBackground();
+window.addEventListener('scroll', queueGridBackgroundUpdate, { passive: true });
+window.addEventListener('resize', () => {
+  const point = getGridRelativePoint(window.innerWidth * 0.5, window.innerHeight * 0.32);
+  gridFocusX = point.x;
+  gridFocusY = point.y;
+  queueGridBackgroundUpdate();
+});
+window.addEventListener('pointermove', (e) => {
+  if (!gridHoverCapable.matches) return;
+  gridFocusActive = true;
+  const point = getGridRelativePoint(e.clientX, e.clientY);
+  gridFocusX = point.x;
+  gridFocusY = point.y;
+  queueGridBackgroundUpdate();
+}, { passive: true });
+window.addEventListener('pointerleave', () => {
+  gridFocusActive = false;
+  queueGridBackgroundUpdate();
+});
+gridHoverCapable.addEventListener('change', () => {
+  if (!gridHoverCapable.matches) gridFocusActive = false;
+  queueGridBackgroundUpdate();
 });
 
 // 联系表单 — 使用 Formspree 发送邮件
@@ -266,13 +328,6 @@ const playlist = [
     theme: 'theme-b'
   },
   {
-    name: 'Head In The Clouds',
-    artist: 'Hayd',
-    cover: 'https://p1.music.126.net/NQ6pIqUwA0NdRh6szqyQsQ==/109951166421319018.jpg?param=200y200',
-    src: './music/head-in-the-clouds.mp3',
-    theme: 'theme-a'
-  },
-  {
     name: 'shelter',
     artist: 'hakaisu / Alys',
     cover: 'https://p2.music.126.net/sdbcH2bH-t-6wU9J-DK82w==/109951163020032493.jpg?param=200y200',
@@ -371,10 +426,14 @@ function initAudioElement() {
   audioElement.addEventListener('ended', () => {
     stopPlayback();
     isPlaying = false;
-    heroMusicPlay.innerHTML = playIcon;
     heroMusicCover.classList.remove('spinning');
     heroMusic.classList.remove('playing');
-    nextTrack();
+    currentTrack = (currentTrack + 1) % playlist.length;
+    loadTrack(currentTrack);
+    isPlaying = true;
+    heroMusicCover.style.animationPlayState = 'running';
+    heroMusic.classList.add('playing');
+    startPlayback();
   });
 }
 
@@ -404,10 +463,6 @@ function stopPlayback() {
 }
 
 const ORBIT_DOT_SHAPES = {
-  'theme-a': [
-    { cls: 'p-a-bubble', color: '#FFB6C1', size: 24 },
-    { cls: 'p-a-gummy',  color: '#B5EAD7', size: 24 },
-  ],
   'theme-b': [
     { cls: 'p-b-svgleaf', color: '#418A45', size: 36 },
     { cls: 'p-b-flower',  color: '#6B9B3E', size: 36 },
@@ -419,8 +474,8 @@ const ORBIT_DOT_SHAPES = {
 };
 
 function refreshOrbitDots() {
-  const theme = document.body.getAttribute('data-music-theme') || 'theme-a';
-  const shapes = ORBIT_DOT_SHAPES[theme] || ORBIT_DOT_SHAPES['theme-a'];
+  const theme = document.body.getAttribute('data-music-theme') || 'theme-b';
+  const shapes = ORBIT_DOT_SHAPES[theme] || ORBIT_DOT_SHAPES['theme-b'];
   const dots = document.querySelectorAll('.orbit-dot');
 
   dots.forEach((dot, i) => {
@@ -431,15 +486,9 @@ function refreshOrbitDots() {
     dot.style.height = cfg.size + 'px';
 
     dot.style.opacity = '1';
-    dot.style.boxShadow = '0 0 20px var(--glow-color-1), 0 0 40px var(--glow-color-3)';
-
-    if (theme === 'theme-a') {
-      dot.style.background = cfg.color;
-      dot.style.color = '';
-    } else {
-      dot.style.background = '';
-      dot.style.color = cfg.color;
-    }
+    dot.style.boxShadow = '0 0 30px var(--glow-color-1), 0 0 60px var(--glow-color-3)';
+    dot.style.background = '';
+    dot.style.color = cfg.color;
   });
 }
 
@@ -479,31 +528,7 @@ function loadTrack(idx) {
   if (t.theme) switchMusicTheme(t.theme);
 }
 
-// click disc -> expand/collapse
-heroMusicCover.addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (heroMusic.classList.contains('open')) {
-    collapseMusicCard();
-  } else {
-    expandMusicCard();
-  }
-});
-
-// click blank area -> collapse
-heroMusic.addEventListener('click', (e) => {
-  if (e.target === heroMusicCover || heroMusicCover.contains(e.target)) return;
-  if (heroMusic.classList.contains('open')) {
-    collapseMusicCard();
-  }
-});
-
-function expandMusicCard() {
-  heroMusic.classList.add('open');
-}
-
-function collapseMusicCard() {
-  heroMusic.classList.remove('open');
-}
+loadTrack(0);
 
 function togglePlay() {
   isPlaying = !isPlaying;
@@ -548,9 +573,6 @@ function prevTrack() {
   startPlayback();
 }
 
-loadTrack(0);
-expandMusicCard();
-
 // control buttons
 heroMusicPlay.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -589,7 +611,7 @@ function renderPlaylist(data) {
     const realIdx = playlist.indexOf(track);
     const item = document.createElement('div');
     item.className = 'playlist-item' + (realIdx === currentTrack ? ' active' : '');
-    item.dataset.theme = track.theme || 'theme-a';
+    item.dataset.theme = track.theme || 'theme-b';
     const coverHtml = track.cover.startsWith('http')
       ? `<img src="${track.cover}" alt="${track.name}">`
       : track.cover;
@@ -624,11 +646,9 @@ function selectSong(idx) {
   closePlaylist();
 }
 
-heroMusicName.addEventListener('click', (e) => {
+heroMusicCover.addEventListener('click', (e) => {
   e.stopPropagation();
-  if (heroMusic.classList.contains('open')) {
-    openPlaylist();
-  }
+  openPlaylist();
 });
 
 playlistClose.addEventListener('click', closePlaylist);
@@ -679,13 +699,11 @@ const PARTICLE_CONFIG = {
 };
 
 const THEME_SHAPES = {
-  'theme-a': ['p-a-bubble', 'p-a-gummy', 'p-a-cloud'],
   'theme-b': ['p-b-svgleaf', 'p-b-greenleaf', 'p-b-plant', 'p-b-flower', 'p-b-dew', 'p-b-cloud', 'p-b-grass', 'p-b-sun', 'p-b-twitter', 'p-b-love', 'p-b-music', 'p-b-bee', 'p-b-bush', 'p-b-clover'],
   'theme-c': ['p-c-Github', 'p-c-cplusplus', 'p-c-code1', 'p-c-code2', 'p-c-AE', 'p-c-ChatGPT', 'p-c-Linux', 'p-c-Claude', 'p-c-Python', 'p-c-Cli', 'p-c-VScode', 'p-c-Java', 'p-c-Grok', 'p-c-BTC', 'p-c-Dollar', 'p-c-Telegram', 'p-c-chrome'],
 };
 
 const THEME_COLORS = {
-  'theme-a': ['#FFB6C1', '#B5EAD7', '#D4B5E2', '#FFDAB9', '#B5D8EB', '#FFF8E1', '#FFE4E9', '#E8A0B5', '#FFE4B5', '#B0E0E6', '#E8F8F0', '#F3EBF8'],
   'theme-b': ['#418A45', '#6B9B3E', '#8FBC8F', '#D4A574', '#A8C686', '#F0F5EB', '#E8F5E2', '#357239', '#4CAF50', '#EDF3E8', '#F5FAF2'],
   'theme-c': ['#f4edfe5f', '#9287ae73'],
 };
@@ -734,14 +752,8 @@ class Particle {
     this.el.style.setProperty('--sway-x', `${swayX}px`);
     this.el.style.setProperty('--rotation', `${rotation}deg`);
     this.el.style.setProperty('--mid-opacity', `${opacity}`);
-
-    if (theme === 'theme-a') {
-      this.el.style.background = color;
-      this.el.style.color = '';
-    } else {
-      this.el.style.background = '';
-      this.el.style.color = color;
-    }
+    this.el.style.background = '';
+    this.el.style.color = color;
 
     this.el.className = `particle ${shape}`;
 
@@ -769,7 +781,7 @@ class ParticleController {
   }
 
   getTheme() {
-    return document.body.getAttribute('data-music-theme') || 'theme-a';
+    return document.body.getAttribute('data-music-theme') || 'theme-b';
   }
 
   init() {
@@ -1021,7 +1033,7 @@ function startEntrance() {
   entranceTimers = [];
 
   // reset all
-  document.querySelectorAll('.enter, .char, .avatar-orbit, .scroll-indicator, .scroll-text').forEach(el => {
+  document.querySelectorAll('.enter, .char, .avatar-orbit').forEach(el => {
     el.classList.remove('visible');
   });
 
@@ -1033,35 +1045,36 @@ function startEntrance() {
   const nav = document.querySelector('#navbar');
   if (nav) addTimer(() => nav.classList.add('visible'), 500);
   const greeting = document.querySelector('.hero-greeting');
-  if (greeting) addTimer(() => greeting.classList.add('visible'), 300);
+  if (greeting) addTimer(() => greeting.classList.add('visible'), 250);
 
   // 2. title bottom-left pop + avatar orbit (sync with loader expand)
   const title = document.querySelector('.hero h1');
-  if (title) addTimer(() => title.classList.add('visible'), 400);
+  if (title) addTimer(() => title.classList.add('visible'), 350);
   const orbit = document.querySelector('.avatar-orbit');
-  if (orbit) addTimer(() => orbit.classList.add('visible'), 400);
+  if (orbit) addTimer(() => orbit.classList.add('visible'), 350);
 
-  // 3. subtitle blur reveal
+  // 3. subtitle blur reveal - staggered character animation
   if (heroSubtitle) {
     const chars = heroSubtitle.querySelectorAll('.char');
     chars.forEach((el, i) => {
-      addTimer(() => el.classList.add('visible'), 600 + i * 60);
+      addTimer(() => el.classList.add('visible'), 650 + i * 35);
     });
   }
 
-  // 4. music card fade in
+  // 4. music card scale + fade in
   const music = document.querySelector('.hero-music');
-  if (music) addTimer(() => music.classList.add('visible'), 1200);
+  if (music) addTimer(() => music.classList.add('visible'), 500);
 
-  // 5. quote fade in
+  // 5. quote slide up + fade in
   const quote = document.querySelector('.hero-quote');
-  if (quote) addTimer(() => quote.classList.add('visible'), 1700);
+  if (quote) addTimer(() => quote.classList.add('visible'), 1000);
 
-  // 6. scroll elements (mouse icon first, then text)
-  const scrollInd = document.querySelector('.scroll-indicator');
-  const scrollTxt = document.querySelector('.scroll-text');
-  if (scrollInd) addTimer(() => scrollInd.classList.add('visible'), 2600);
-  if (scrollTxt) addTimer(() => scrollTxt.classList.add('visible'), 2600);
+  // 6. scroll indicator + scroll text blur-in
+  addTimer(() => {
+    if (scrollIndicator) scrollIndicator.classList.add('visible');
+    if (scrollText) scrollText.classList.add('visible');
+    scrollIndicatorReady = true;
+  }, 2000);
 
   // 7. remove .enter from nav so scroll transition isn't blocked
   addTimer(() => {
