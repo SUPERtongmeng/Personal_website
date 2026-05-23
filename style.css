@@ -12,7 +12,7 @@
   --text-dark: #5D4E6D;
   --text-mid: #7B6B8A;
   --text-light: #9B8BAA;
-  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.35);
   --glass-shadow: rgba(180, 160, 200, 0.2);
   --glow-color-1: rgba(212, 181, 226, 0.4);
@@ -78,7 +78,7 @@ body {
     radial-gradient(circle at 50% 0%, var(--grid-glow) 0%, transparent 62%);
   background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), 100% 100%;
   background-position: 0 0, 0 0, center top;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.2) 100%);
+  mask-image: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 1) 45%, rgba(0, 0, 0, 0.6) 65%, transparent 90%);
   transform: translate3d(0, 0, 0);
   will-change: transform;
   isolation: isolate;
@@ -94,13 +94,7 @@ body {
 }
 
 .bg-grid::before {
-  opacity: calc(var(--grid-focus-opacity) * var(--grid-focus-strength) * 0.95);
-  background:
-    radial-gradient(circle var(--grid-focus-size) at var(--grid-focus-x) var(--grid-focus-y),
-      var(--grid-focus-glow) 0%,
-      rgba(255, 255, 255, 0.06) 24%,
-      rgba(255, 255, 255, 0.015) 46%,
-      transparent 76%);
+  display: none;
 }
 
 .bg-grid::after {
@@ -110,11 +104,11 @@ body {
     linear-gradient(to bottom, var(--grid-focus-line) 1px, transparent 1px);
   background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
   background-position: 0 0, 0 0;
-  mask-image: radial-gradient(circle calc(var(--grid-focus-size) * 0.62) at var(--grid-focus-x) var(--grid-focus-y),
+  mask-image: radial-gradient(circle calc(var(--grid-focus-size) * 0.5) at var(--grid-focus-x) var(--grid-focus-y),
     rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.68) 38%,
-    rgba(0, 0, 0, 0.18) 62%,
-    transparent 82%);
+    rgba(0, 0, 0, 0.8) 20%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%);
 }
 
 .particles {
@@ -127,15 +121,15 @@ body {
 .particle {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.35;
+  opacity: 0.18;
   animation: floatUp linear infinite;
   --start-y: 110vh;
   --sway-x: 0px;
 }
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   box-shadow: 0 8px 48px var(--glass-shadow);
@@ -313,6 +307,7 @@ section {
 }
 .hero-greeting {
   display: inline-block;
+  font-family: 'Inter', sans-serif;
   font-size: 1rem;
   font-weight: 500;
   color: var(--lavender);
@@ -422,6 +417,7 @@ section {
   50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--lavender) 20%, transparent), 0 16px 80px var(--glow-color-4), 0 0 80px var(--glow-color-5), 0 0 140px var(--glow-color-6); }
 }
 .hero h1 {
+  position: relative;
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 10px;
@@ -558,7 +554,7 @@ nav.enter.visible .nav-actions {
   filter: blur(15px);
 }
 .hero h1.enter.visible {
-  animation: scaleUpFade 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: scaleUpFade 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, heroTitleShimmer 3s ease-in-out infinite alternate;
   transform: translate(0, 0) scale(1);
 }
 .hero-music.open.enter {
@@ -640,8 +636,8 @@ nav.enter.visible .nav-actions {
 .hero-music.open {
   padding: 10px 14px 10px 10px;
   background: var(--glass-bg) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid var(--glass-border) !important;
   box-shadow: 0 4px 20px var(--glass-shadow) !important;
   cursor: default;
@@ -1036,24 +1032,33 @@ nav.enter.visible .nav-actions {
 .blog-more {
   display: block;
   margin: 24px auto 0;
-  padding: 10px 32px;
+  padding: 10px 28px;
   border: 1px solid var(--glass-border);
   border-radius: 999px;
   background: var(--glass-bg);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-mid);
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, border-color 0.3s ease;
 }
 .blog-more:hover {
   color: var(--text-dark);
   border-color: var(--lavender);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px var(--glass-shadow);
 }
 .blog-more span {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+.blog-more:hover span {
+  transform: translateX(4px);
+}
+.blog-more span {
+  position: relative;
+  z-index: 1;
   display: inline-block;
   transition: transform 0.3s ease;
 }
@@ -1170,21 +1175,140 @@ nav.enter.visible .nav-actions {
   resize: none;
   min-height: 70px;
 }
-.contact-form button {
-  padding: 14px;
+/* 发送消息按钮 */
+.send-btn {
+  position: relative;
+  width: 100%;
+  height: 52px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--pink), var(--lavender));
-  color: white;
+  border-radius: 14px;
+  background: var(--light-pink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--text-dark);
   cursor: pointer;
-  transition: var(--transition);
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.contact-form button:hover {
+
+.send-btn-outline { display: none; }
+
+.send-btn-state {
+  position: relative; z-index: 2;
+  padding-left: 29px;
+  display: flex;
+}
+.send-btn-icon {
+  position: absolute; left: 0; top: 0; bottom: 0; margin: auto;
+  transform: scale(1.25); transition: all 0.3s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.send-btn-icon svg { overflow: visible; }
+
+/* 纸飞机落地 */
+.send-btn .send-btn-icon svg {
+  animation: planeLand 0.6s ease forwards;
+}
+@keyframes planeLand {
+  0% { transform: translateX(-50px) translateY(25px) rotate(-50deg) scale(2); opacity: 0; filter: blur(3px); }
+  100% { transform: translateX(0) translateY(0) rotate(0); opacity: 1; filter: blur(0); }
+}
+
+.send-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(212, 181, 226, 0.4);
+}
+
+/* hover: 纸飞机倾斜 */
+.send-btn:hover .send-btn-icon {
+  transform: rotate(45deg) scale(1.25);
+}
+
+/* 字母滑动入场 */
+.send-btn-state p { margin: 0; display: flex; gap: 2px; }
+.send-btn-state span {
+  display: block; opacity: 0;
+  animation: slideDown 0.8s ease forwards calc(var(--i) * 0.03s);
+}
+@keyframes slideDown {
+  0% { opacity:0; transform:translateY(-16px) translateX(4px) rotate(-90deg); filter:blur(4px); }
+  30% { opacity:1; transform:translateY(3px) translateX(0) rotate(0); filter:blur(0); }
+  50% { opacity:1; transform:translateY(-2px) translateX(0) rotate(0); }
+  100% { opacity:1; transform:translateY(0) translateX(0) rotate(0); }
+}
+
+/* hover: 字母波浪 */
+.send-btn:hover .send-btn-state span {
+  animation: slideDown 0.8s ease forwards calc(var(--i) * 0.03s), wave 0.5s ease calc(var(--i) * 0.02s);
+}
+@keyframes wave {
+  30% { transform:translateY(3px) rotate(0); }
+  50% { transform:translateY(-3px) rotate(0); color:var(--lavender); }
+  100% { transform:translateY(0) rotate(0); }
+}
+
+/* 发送状态 */
+.send-btn-state--default { transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+.send-btn-state--sent {
+  display: none;
+}
+.send-btn-state--sent .send-btn-icon svg {
+  transform: scale(1.25); margin-right: 8px;
+}
+
+/* 发送成功 */
+.send-btn.sent .send-btn-state--default .send-btn-icon { position: relative; }
+.send-btn.sent .send-btn-state--default .send-btn-icon svg {
+  animation: planeTakeOff 0.8s linear forwards;
+}
+@keyframes planeTakeOff {
+  0% { opacity:1; }
+  60% { opacity:1; transform:translateX(60px) rotate(45deg) scale(1.8); }
+  100% { opacity:0; transform:translateX(140px) rotate(45deg) scale(0); }
+}
+.send-btn.sent .send-btn-state--default .send-btn-icon::after {
+  content: ''; position: absolute; top: 50%; left: -5px; height: 2px; width: 0;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.5));
+  animation: planeTrail 0.8s linear forwards;
+}
+@keyframes planeTrail {
+  0% { width:0; opacity:1; }
+  8% { width:12px; }
+  60% { opacity:0.7; width:60px; }
+  100% { opacity:0; width:120px; }
+}
+.send-btn.sent .send-btn-state--default {
+  position: absolute;
+}
+.send-btn.sent .send-btn-state--sent {
+  display: flex;
+}
+.send-btn.sent .send-btn-state--sent span {
+  opacity: 0;
+  animation: slideDown 0.8s ease forwards calc(var(--i) * 0.2s);
+}
+.send-btn.sent .send-btn-state--sent .send-btn-icon svg {
+  opacity: 0;
+  animation: checkAppear 1.2s ease forwards 0.8s;
+}
+@keyframes checkAppear {
+  0% { opacity:0; transform:scale(3.5) rotate(-35deg); filter:blur(4px); }
+  30% { opacity:1; transform:scale(0.6); filter:blur(1px); }
+  50% { opacity:1; transform:scale(1.2); filter:blur(0); }
+  100% { opacity:1; transform:scale(1); }
+}
+
+.send-btn.sent .send-btn-state--default span {
+  animation: disapear 0.6s ease forwards calc(var(--i) * 0.03s);
+}
+@keyframes disapear {
+  from { opacity:1; }
+  to { opacity:0; transform:translateX(5px) translateY(16px); filter:blur(4px); }
 }
 
 .site-footer {
@@ -1410,7 +1534,7 @@ nav.enter.visible .nav-actions {
   --light-mint: #2D1B54;
   --light-lavender: #361694;
   --rose: #441CBD;
-  --glass-bg: rgba(36,26,66,0.55);
+  --glass-bg: rgba(36,26,66,0.08);
   --glass-border: rgba(81,34,224,0.25);
   --glass-shadow: rgba(0,0,0,0.45);
   --glow-color-1: rgba(81,34,224,0.35);
@@ -1483,6 +1607,23 @@ body[data-music-theme="theme-c"] {
 }
 [data-music-theme="theme-c"] .scroll-text {
   color: var(--text-mid);
+}
+
+[data-music-theme="theme-c"] .send-btn {
+  background: rgba(167,139,250,0.2);
+  color: #E8E8E8;
+}
+
+[data-music-theme="theme-c"] .contact-form input,
+[data-music-theme="theme-c"] .contact-form textarea {
+  background: rgba(36,26,66,0.4);
+  color: #E8E8E8;
+}
+[data-music-theme="theme-c"] .contact-form input:focus,
+[data-music-theme="theme-c"] .contact-form textarea:focus {
+  background: rgba(36,26,66,0.6);
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px rgba(81,34,224,0.15);
 }
 
 [data-music-theme="theme-c"] footer {
@@ -1672,7 +1813,7 @@ body[data-music-theme="theme-c"] {
   --light-mint: #EDF3E8;
   --light-lavender: #F5FAF2;
   --rose: #357239;
-  --glass-bg: rgba(65,138,69,0.1);
+  --glass-bg: rgba(65,138,69,0.08);
   --glass-border: rgba(65,138,69,0.25);
   --glass-shadow: rgba(65,138,69,0.15);
   --glow-color-1: rgba(65,138,69,0.3);
@@ -1684,9 +1825,9 @@ body[data-music-theme="theme-c"] {
   --grid-line: rgba(65, 138, 69, 0.12);
   --grid-glow: rgba(255, 255, 255, 0.1);
   --grid-focus-glow: rgba(168, 221, 146, 0.44);
-  --grid-focus-line: rgba(186, 230, 163, 0.18);
-  --grid-focus-size: 600px;
-  --grid-focus-strength: 0.8;
+  --grid-focus-line: rgba(186, 230, 163, 0.55);
+  --grid-focus-size: 800px;
+  --grid-focus-strength: 1.2;
 }
 
 body[data-music-theme="theme-b"] {
@@ -2317,8 +2458,8 @@ body {
   width: 80px;
   height: 80px;
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   display: flex;

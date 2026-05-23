@@ -205,9 +205,7 @@ document.getElementById('contactForm').addEventListener('submit', async function
     return;
   }
 
-  const btn = this.querySelector('button');
-  const txt = btn.textContent;
-  btn.textContent = '发送中…';
+  const btn = this.querySelector('.send-btn');
   btn.disabled = true;
 
   try {
@@ -221,16 +219,17 @@ document.getElementById('contactForm').addEventListener('submit', async function
       })
     });
     if (res.ok) {
+      btn.classList.add('sent');
       showToast('消息已发送，感谢你的联系！');
       lastFormSubmit = Date.now();
       this.reset();
+      setTimeout(() => btn.classList.remove('sent'), 2500);
     } else {
       showToast('❌ 发送失败，请稍后再试');
     }
   } catch {
     showToast('❌ 网络错误，请稍后再试');
   }
-  btn.textContent = txt;
   btn.disabled = false;
 });
 
@@ -694,7 +693,7 @@ const PARTICLE_CONFIG = {
   delay: { min: 0, max: 30 },
   startY: { min: 100, max: 160 },
   swayX: { min: -60, max: 60 },
-  opacity: { min: 0.18, max: 0.40 },
+  opacity: { min: 0.08, max: 0.22 },
   rotation: { min: 360, max: 1080 },
 };
 
