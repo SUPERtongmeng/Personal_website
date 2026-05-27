@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="favicon.png">
 <title>个人主页</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Quicksand:wght@400;600;700&family=Inter:wght@700&family=Poppins:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Quicksand:wght@400;600;700&family=Inter:wght@700&family=Poppins:wght@700&family=Dancing+Script:wght@700&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-music-theme="theme-b">
+
+<canvas id="webgl"></canvas>
+<div id="webgl-overlay"></div>
 
 <div class="bg-grid" aria-hidden="true"></div>
 
@@ -23,7 +26,7 @@
 </div>
 
 <nav id="navbar" class="enter">
-  <div class="nav-brand">Xiao Bei</div>
+  <div class="nav-brand">Xiao Xi</div>
   <ul class="nav-links">
     <li><a href="#about">关于</a></li>
     <li><a href="#skills">技能</a></li>
@@ -44,16 +47,10 @@
   <div class="hero-inner">
     <div class="hero-left">
       <div class="hero-greeting enter">Hello, I'm</div>
-      <h1 class="enter">Xiao Bei</h1>
+      <h1 class="enter" data-text="Xiao Xi">Xiao Xi</h1>
       <p id="heroSubtitle"></p>
       <div class="hero-music open enter" id="heroMusic">
         <div class="hero-music-cover" id="heroMusicCover">🎸</div>
-        <div class="hero-music-bars" id="heroMusicBars">
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
         <div class="hero-music-expanded" id="heroMusicExpanded">
           <div class="hero-music-info">
             <span class="hero-music-name" id="heroMusicName">Sunny Day</span>
@@ -162,7 +159,7 @@
     <div class="glass contact-info reveal">
       <h3>保持联系</h3>
       <p>如果你有任何问题，或者只是想打个招呼，欢迎随时联系我！</p>
-      <div class="contact-detail"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path stroke-dasharray="66" d="M4 5h16c0.55 0 1 0.45 1 1v12c0 0.55 -0.45 1 -1 1h-16c-0.55 0 -1 -0.45 -1 -1v-12c0 -0.55 0.45 -1 1 -1Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="66;0"/></path><path stroke-dasharray="24" stroke-dashoffset="24" d="M3 6.5l9 5.5l9 -5.5"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.3s" to="0"/></path></g></svg></span> <strong>邮箱</strong>：<a href="mailto:m177840475475@163.com" target="_blank">m177840475475@163.com</a></div>
+      <div class="contact-detail"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path stroke-dasharray="66" d="M4 5h16c0.55 0 1 0.45 1 1v12c0 0.55 -0.45 1 -1 1h-16c-0.55 0 -1 -0.45 -1 -1v-12c0 -0.55 0.45 -1 1 -1Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="66;0"/></path><path stroke-dasharray="24" stroke-dashoffset="24" d="M3 6.5l9 5.5l9 -5.5"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.3s" to="0"/></path></g></svg></span> <strong>邮箱</strong>：<a href="mailto:m17784075475@163.com" target="_blank">m17784075475@163.com</a></div>
       <div class="contact-detail"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="24" fill="none"/><g fill="none" fill-rule="evenodd"><path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z"/><path fill="currentColor" d="M6.445 3.168a1 1 0 0 1 1.387.277L9.535 6h4.93l1.703-2.555a1 1 0 0 1 1.664 1.11L16.87 6H18a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4h1.131l-.963-1.445a1 1 0 0 1 .277-1.387M8.986 8H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2H9.016zM9 11a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1m6 0a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1"/></g></svg></span> <strong>Bilibili</strong>：<a href="https://space.bilibili.com/503618520" target="_blank">曈Meng_</a></div>
       <div class="contact-detail"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-dasharray="60" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5c9 0 9 0 9 7c0 7 0 7 -9 7c-9 0 -9 0 -9 -7c0 -7 0 -7 9 -7Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="60;0"/></path><path fill="currentColor" d="M10 8.5l6 3.5l-6 3.5Z" opacity="0"><set fill="freeze" attributeName="opacity" begin="0.6s" to="1"/><animate fill="freeze" attributeName="d" begin="0.6s" dur="0.2s" values="M12 11l0 1l0 1Z;M10 8.5l6 3.5l-6 3.5Z"/></path></svg></span> <strong>YouTube</strong>：<a href="https://www.youtube.com/@Cx330-uk2vw" target="_blank">/ Cx330</a></div>
       <div class="contact-detail"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M21 8v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5"/><path d="M10 12a3 3 0 1 0 3 3V6c.333 1 1.6 3 4 3"/></g></svg></span> <strong>抖音</strong>：<a href="https://www.douyin.com/user/self?from_tab_name=main" target="_blank">Wu Yi Wu a a</a></div>
@@ -204,7 +201,7 @@
   <div class="footer-shell reveal">
     <div class="footer-brand">
       <span class="footer-eyebrow">Portfolio</span>
-      <h3>Xiao Bei</h3>
+      <h3>Xiao Xi</h3>
       <p>记录作品、灵感和正在发生的小宇宙。</p>
     </div>
     <div class="footer-links">
@@ -215,8 +212,8 @@
       <a href="#contact">联系</a>
     </div>
     <div class="footer-meta">
-      <a href="mailto:m177840475475@163.com">m177840475475@163.com</a>
-      <p>© 2026 Xiao Bei. Made with care.</p>
+      <a href="mailto:m17784075475@163.com">m17784075475@163.com</a>
+      <p>© 2026 Xiao Xi. Made with care.</p>
     </div>
   </div>
 </footer>
@@ -242,5 +239,104 @@
 <div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 1;
+
+const renderer = new THREE.WebGLRenderer({
+  canvas: document.getElementById("webgl"),
+  antialias: true,
+  alpha: true,
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const loader = new THREE.TextureLoader();
+const overlay = document.getElementById("webgl-overlay");
+
+const texture = loader.load("./images/parallax-image.png");
+const depthTexture = loader.load("./images/parallax-depth.png");
+
+const uniforms = {
+  uTexture: { value: texture },
+  uDepthMap: { value: depthTexture },
+  uMouse: { value: new THREE.Vector2(0, 0) },
+  uIntensity: { value: 0.01 },
+};
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uTexture;
+    uniform sampler2D uDepthMap;
+    uniform vec2 uMouse;
+    uniform float uIntensity;
+    varying vec2 vUv;
+
+    void main() {
+      float depth = texture2D(uDepthMap, vUv).r;
+      vec2 fake3D = (uMouse * depth) * uIntensity;
+      vec2 uv = vUv - fake3D;
+      vec4 color = texture2D(uTexture, uv);
+      gl_FragColor = color;
+    }
+  `,
+});
+
+const geometry = new THREE.PlaneGeometry(2, 2);
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+const targetMouse = new THREE.Vector2();
+const currentMouse = new THREE.Vector2();
+
+function isParallaxTheme() {
+  return document.body.getAttribute("data-music-theme") === "theme-b";
+}
+
+function syncParallaxTheme() {
+  const active = isParallaxTheme();
+  renderer.domElement.style.display = active ? "block" : "none";
+  overlay.style.display = active ? "block" : "none";
+}
+
+window.addEventListener("mousemove", (e) => {
+  targetMouse.x = (e.clientX / window.innerWidth - 0.5) * 2.0;
+  targetMouse.y = -(e.clientY / window.innerHeight - 0.5) * 2.0;
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (!isParallaxTheme()) return;
+  currentMouse.lerp(targetMouse, 0.05);
+  uniforms.uMouse.value = currentMouse;
+  renderer.render(scene, camera);
+}
+animate();
+
+syncParallaxTheme();
+
+new MutationObserver(syncParallaxTheme).observe(document.body, {
+  attributes: true,
+  attributeFilter: ["data-music-theme"],
+});
+
+window.addEventListener("resize", () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+</script>
+
 </body>
 </html>

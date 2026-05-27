@@ -5,10 +5,10 @@
   if (!loaderName || !loader) return;
 
   // 构建字母
-  const text = 'Xiao Bei';
+  const text = 'Xiao Xi';
   loaderName.innerHTML = '';
   const chars = [];
-  const colors = ['#A8D5A2','#8BC98A','#70BC73','#56AE5B','transparent','#3D9548','#2D8035','#1E6825'];
+  const colors = ['#F0C8D0','#E4AAB3','#DDA0AC','#D490A0','transparent','#C28090','#B87082','#A86075'];
   for (const ch of text) {
     const span = document.createElement('span');
     span.textContent = ch === ' ' ? ' ' : ch;
@@ -89,6 +89,7 @@ const scrollText = document.querySelector('.scroll-text');
 let scrollIndicatorReady = false;
 const navSections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav-links a');
+let lastScrollY = window.scrollY;
 window.addEventListener('scroll', () => {
   navbar.classList.toggle('scrolled', window.scrollY > 60);
   const fadeOut = Math.max(0, 1 - window.scrollY / 700);
@@ -96,23 +97,56 @@ window.addEventListener('scroll', () => {
     if (scrollIndicator) scrollIndicator.style.opacity = fadeOut;
     if (scrollText) scrollText.style.opacity = fadeOut;
   }
-  let current = '';
-  const maxY = document.documentElement.scrollHeight - window.innerHeight;
-  if (window.scrollY >= maxY - 50) {
-    const last = navSections[navSections.length - 1];
-    if (last) current = last.getAttribute('id');
-  }
-  if (!current) {
-    for (let i = navSections.length - 1; i >= 0; i--) {
-      const section = navSections[i];
-      if (window.scrollY >= section.offsetTop - 130) {
-        current = section.getAttribute('id');
-        break;
-      }
+
+  const navHeight = 130;
+  const scrollY = window.scrollY;
+  const dirDown = scrollY >= lastScrollY;
+  lastScrollY = scrollY;
+
+  navSections.forEach((section) => {
+    const id = section.getAttribute('id');
+    const link = document.querySelector(`.nav-links a[href="#${id}"]`);
+    if (!link) return; // 跳过没有导航链接的 section（如 #hero）
+
+    const top = section.offsetTop;
+    const bottom = top + section.offsetHeight;
+    let progress = 0;
+    let phase = 'hidden';
+
+    const activeTop = top - navHeight;
+    const activeBottom = bottom - navHeight;
+
+    // 过渡区：两个 section 之间的间隙
+    const allSections = Array.from(navSections).filter(s => {
+      const sid = s.getAttribute('id');
+      return document.querySelector(`.nav-links a[href="#${sid}"]`);
+    });
+    const idx = allSections.indexOf(section);
+    const prevSection = allSections[idx - 1];
+    const nextSection = allSections[idx + 1];
+    const enterStart = prevSection ? prevSection.offsetTop + prevSection.offsetHeight - navHeight : activeTop;
+    const exitEnd = nextSection ? nextSection.offsetTop - navHeight : activeBottom;
+
+    if (scrollY >= enterStart && scrollY < activeTop) {
+      progress = (scrollY - enterStart) / (activeTop - enterStart);
+      phase = 'enter';
+    } else if (scrollY >= activeTop && scrollY < activeBottom) {
+      progress = 1;
+      phase = 'active';
+    } else if (scrollY >= activeBottom && scrollY < exitEnd) {
+      progress = 1 - (scrollY - activeBottom) / (exitEnd - activeBottom);
+      phase = 'exit';
     }
-  }
-  navLinks.forEach(link => {
-    link.classList.toggle('nav-active', link.getAttribute('href') === `#${current}`);
+
+    const pct = ((1 - progress) * 100).toFixed(1);
+    let clip = `inset(0 ${pct}% 0 0)`;
+    if (phase === 'exit') {
+      clip = dirDown ? `inset(0 0 0 ${pct}%)` : `inset(0 ${pct}% 0 0)`;
+    } else if (phase === 'enter') {
+      clip = dirDown ? `inset(0 ${pct}% 0 0)` : `inset(0 0 0 ${pct}%)`;
+    }
+    link.style.setProperty('--nav-clip', clip);
+    link.classList.toggle('nav-active', phase !== 'hidden');
   });
 });
 
@@ -194,7 +228,9 @@ const FORM_SUBMIT_URL = 'https://formspree.io/f/mwvyvydg';
 let lastFormSubmit = 0;
 const FORM_COOLDOWN = 60_000; // 60 秒冷却
 
-document.getElementById('contactForm').addEventListener('submit', async function(e) {
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+  contactForm.addEventListener('submit', async function(e) {
   e.preventDefault();
 
   const now = Date.now();
@@ -232,6 +268,7 @@ document.getElementById('contactForm').addEventListener('submit', async function
   }
   btn.disabled = false;
 });
+} // end if contactForm
 
 // 说点什么 textarea 自适应高度
 const contactTextarea = document.querySelector('.contact-form textarea');
@@ -256,29 +293,34 @@ const blogData = [
   { title: '马卡龙配色在 UI 设计中的运用', body: '马卡龙配色以其柔和、甜美的特点深受设计师喜爱。然而，如何在保持甜美特质的同时确保界面的可用性和可读性，是一个值得探讨的话题。\n\n本文分享了马卡龙配色在 UI 设计中的实践心得，包括色彩搭配原则、对比度控制、以及如何与毛玻璃效果完美结合，创造出既美观又实用的界面设计。' },
 ];
 
-document.querySelectorAll('.blog-card').forEach(card => {
-  card.addEventListener('click', () => {
-    const idx = parseInt(card.dataset.article);
-    const article = blogData[idx];
-    document.getElementById('modalTitle').textContent = article.title;
-    document.getElementById('modalBody').textContent = article.body;
-    document.getElementById('modal').classList.add('active');
+const modal = document.getElementById('modal');
+const modalClose = document.getElementById('modalClose');
+if (modal && modalClose) {
+  document.querySelectorAll('.blog-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.article);
+      const article = blogData[idx];
+      document.getElementById('modalTitle').textContent = article.title;
+      document.getElementById('modalBody').textContent = article.body;
+      modal.classList.add('active');
+    });
   });
-});
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('active');
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) modal.classList.remove('active');
+  });
+}
 
 // "显示更多" 按钮
 document.getElementById('blogMoreBtn')?.addEventListener('click', () => {
   const toast = document.getElementById('toast');
+  if (!toast) return;
   toast.textContent = '更多文章正在路上…';
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2500);
-});
-
-document.getElementById('modalClose').addEventListener('click', () => {
-  document.getElementById('modal').classList.remove('active');
-});
-document.getElementById('modal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) document.getElementById('modal').classList.remove('active');
 });
 
 const quotes = [
@@ -310,20 +352,23 @@ function showRandomQuote() {
 showRandomQuote();
 
 // ========== 音乐播放器 (HTML5 Audio 真实音频) ==========
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
 let audioElement = null;
 let sourceNode = null;
-const analyser = audioCtx.createAnalyser();
-analyser.fftSize = 256;
-const bufferLength = analyser.frequencyBinCount;
-const dataArray = new Uint8Array(bufferLength);
+
+function ensureAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
 
 const playlist = [
   {
-    name: '春禾',
-    artist: 'Youzee Music',
-    cover: 'https://p1.music.126.net/Nbq2akzthvXIJP6xSr_9yA==/109951170758787069.jpg?param=200y200',
-    src: './music/chunhe.mp3',
+    name: 'magnolia',
+    artist: 'keshi',
+    cover: 'images/cover-b.jpg?v=2',
+    src: './music/magnolia.mp3',
     theme: 'theme-b'
   },
   {
@@ -337,6 +382,7 @@ const playlist = [
 
 let currentTrack = 0;
 let isPlaying = false;
+let isTransitioning = false; // 切歌防抖
 
 const heroMusic = document.getElementById('heroMusic');
 const heroMusicName = document.getElementById('heroMusicName');
@@ -348,43 +394,7 @@ const heroMusicNext = document.getElementById('heroMusicNext');
 const pauseIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M4 7a3 3 0 0 1 3-3h1a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3zm12-3a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h1a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3z" clip-rule="evenodd"/></svg>';
 const playIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M19.5 14.598c2-1.155 2-4.041 0-5.196l-9-5.196C8.5 3.05 6 4.494 6 6.804v10.392c0 2.31 2.5 3.753 4.5 2.598z" clip-rule="evenodd"/></svg>';
 
-// ========== 音频可视化 ==========
-const barElements = document.querySelectorAll('#heroMusicBars span');
-let visualizationId = null;
-
-function updateBars() {
-  visualizationId = requestAnimationFrame(updateBars);
-  analyser.getByteFrequencyData(dataArray);
-
-  const step = Math.max(1, Math.floor(bufferLength / barElements.length));
-  barElements.forEach((bar, i) => {
-    let sum = 0;
-    let count = 0;
-    for (let j = 0; j < step && (i * step + j) < bufferLength; j++) {
-      sum += dataArray[i * step + j];
-      count++;
-    }
-    const avg = count > 0 ? sum / count : 0;
-    const height = Math.max(3, (avg / 255) * 28 + 2);
-    bar.style.height = height.toFixed(1) + 'px';
-  });
-}
-
-function startVisualization() {
-  if (!visualizationId) {
-    updateBars();
-  }
-}
-
-function stopVisualization() {
-  if (visualizationId) {
-    cancelAnimationFrame(visualizationId);
-    visualizationId = null;
-  }
-  barElements.forEach(bar => { bar.style.height = '4px'; });
-}
-
-// 初始化 Audio 元素并连接 Analyser
+// 初始化 Audio 元素
 let audioInitialized = false;
 
 function initAudioElement() {
@@ -395,24 +405,23 @@ function initAudioElement() {
   audioElement = new Audio();
   audioElement.volume = 0.8;
 
+  const ctx = ensureAudioContext();
+
   if (!audioInitialized) {
     try {
-      sourceNode = audioCtx.createMediaElementSource(audioElement);
-      sourceNode.connect(analyser);
-      analyser.connect(audioCtx.destination);
+      sourceNode = ctx.createMediaElementSource(audioElement);
+      sourceNode.connect(ctx.destination);
       audioInitialized = true;
     } catch (e) {
-      console.warn('Web Audio 初始化失败，可视化已禁用:', e);
+      console.warn('Web Audio 初始化失败:', e);
     }
   } else {
-    // 后续切歌：重新连接新的 Audio 元素
     try {
       sourceNode.disconnect();
-      sourceNode = audioCtx.createMediaElementSource(audioElement);
-      sourceNode.connect(analyser);
+      sourceNode = ctx.createMediaElementSource(audioElement);
+      sourceNode.connect(ctx.destination);
     } catch (e) {
       console.warn('Web Audio 重连失败:', e);
-      // 降级：不经过 analyser，直接播放
       try {
         audioElement = new Audio();
         audioElement.volume = 0.8;
@@ -423,6 +432,8 @@ function initAudioElement() {
   }
 
   audioElement.addEventListener('ended', () => {
+    if (isTransitioning) return;
+    isTransitioning = true;
     stopPlayback();
     isPlaying = false;
     heroMusicCover.classList.remove('spinning');
@@ -433,14 +444,15 @@ function initAudioElement() {
     heroMusicCover.style.animationPlayState = 'running';
     heroMusic.classList.add('playing');
     startPlayback();
+    setTimeout(() => { isTransitioning = false; }, 300);
   });
 }
 
 // 开始播放
 function startPlayback() {
-  const p = audioCtx.state === 'suspended' ? audioCtx.resume() : Promise.resolve();
+  const ctx = ensureAudioContext();
+  const p = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
   p.then(() => {
-    startVisualization();
     return audioElement.play();
   }).catch(err => {
     console.warn('播放失败:', err);
@@ -454,7 +466,6 @@ function startPlayback() {
 
 // 停止播放
 function stopPlayback() {
-  stopVisualization();
   if (audioElement) {
     audioElement.pause();
     audioElement.currentTime = 0;
@@ -463,8 +474,8 @@ function stopPlayback() {
 
 const ORBIT_DOT_SHAPES = {
   'theme-b': [
-    { cls: 'p-b-svgleaf', color: '#418A45', size: 36 },
-    { cls: 'p-b-flower',  color: '#6B9B3E', size: 36 },
+    { cls: 'p-b-svgleaf', color: '#E4AAB3', size: 36 },
+    { cls: 'p-b-flower',  color: '#D4A0B0', size: 36 },
   ],
   'theme-c': [
     { cls: 'p-c-Claude', color: '#f4edfe5f', size: 36 },
@@ -506,11 +517,7 @@ function loadTrack(idx) {
   heroMusicName.textContent = t.name;
   heroMusicArtist.textContent = t.artist;
 
-  if (t.cover.startsWith('http')) {
-    heroMusicCover.innerHTML = `<img src="${t.cover}" alt="${t.name}">`;
-  } else {
-    heroMusicCover.textContent = t.cover;
-  }
+  heroMusicCover.innerHTML = `<img src="${t.cover}" alt="${t.name}">`;
 
   // reset spin: clear animation, force reflow, re-apply (start paused)
   heroMusicCover.classList.remove('spinning');
@@ -540,11 +547,12 @@ function togglePlay() {
   } else {
     heroMusicCover.style.animationPlayState = 'paused';
     if (audioElement) audioElement.pause();
-    stopVisualization();
   }
 }
 
 function nextTrack() {
+  if (isTransitioning) return;
+  isTransitioning = true;
   stopPlayback();
   isPlaying = false;
   heroMusicPlay.innerHTML = playIcon;
@@ -556,9 +564,12 @@ function nextTrack() {
   heroMusicCover.style.animationPlayState = 'running';
   heroMusic.classList.add('playing');
   startPlayback();
+  setTimeout(() => { isTransitioning = false; }, 300);
 }
 
 function prevTrack() {
+  if (isTransitioning) return;
+  isTransitioning = true;
   stopPlayback();
   isPlaying = false;
   heroMusicPlay.innerHTML = playIcon;
@@ -570,21 +581,28 @@ function prevTrack() {
   heroMusicCover.style.animationPlayState = 'running';
   heroMusic.classList.add('playing');
   startPlayback();
+  setTimeout(() => { isTransitioning = false; }, 300);
 }
 
 // control buttons
-heroMusicPlay.addEventListener('click', (e) => {
-  e.stopPropagation();
-  togglePlay();
-});
-heroMusicNext.addEventListener('click', (e) => {
-  e.stopPropagation();
-  nextTrack();
-});
-heroMusicPrev.addEventListener('click', (e) => {
-  e.stopPropagation();
-  prevTrack();
-});
+if (heroMusicPlay) {
+  heroMusicPlay.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlay();
+  });
+}
+if (heroMusicNext) {
+  heroMusicNext.addEventListener('click', (e) => {
+    e.stopPropagation();
+    nextTrack();
+  });
+}
+if (heroMusicPrev) {
+  heroMusicPrev.addEventListener('click', (e) => {
+    e.stopPropagation();
+    prevTrack();
+  });
+}
 
 // ========== 曲库弹窗 ==========
 const playlistOverlay = document.getElementById('playlistOverlay');
@@ -611,9 +629,7 @@ function renderPlaylist(data) {
     const item = document.createElement('div');
     item.className = 'playlist-item' + (realIdx === currentTrack ? ' active' : '');
     item.dataset.theme = track.theme || 'theme-b';
-    const coverHtml = track.cover.startsWith('http')
-      ? `<img src="${track.cover}" alt="${track.name}">`
-      : track.cover;
+    const coverHtml = `<img src="${track.cover}" alt="${track.name}">`;
     item.innerHTML = `
       <div class="playlist-item-cover">${coverHtml}</div>
       <div class="playlist-item-info">
@@ -627,10 +643,11 @@ function renderPlaylist(data) {
 }
 
 function selectSong(idx) {
-  if (idx === currentTrack) {
+  if (idx === currentTrack || isTransitioning) {
     closePlaylist();
     return;
   }
+  isTransitioning = true;
   stopPlayback();
   isPlaying = false;
   heroMusicPlay.innerHTML = playIcon;
@@ -643,26 +660,33 @@ function selectSong(idx) {
   heroMusic.classList.add('playing');
   startPlayback();
   closePlaylist();
+  setTimeout(() => { isTransitioning = false; }, 300);
 }
 
-heroMusicCover.addEventListener('click', (e) => {
-  e.stopPropagation();
-  openPlaylist();
-});
+if (heroMusicCover) {
+  heroMusicCover.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openPlaylist();
+  });
+}
 
-playlistClose.addEventListener('click', closePlaylist);
-playlistOverlay.addEventListener('click', (e) => {
-  if (e.target === playlistOverlay) closePlaylist();
-});
+if (playlistClose) {
+  playlistClose.addEventListener('click', closePlaylist);
+}
+if (playlistOverlay) {
+  playlistOverlay.addEventListener('click', (e) => {
+    if (e.target === playlistOverlay) closePlaylist();
+  });
+}
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && playlistOverlay.classList.contains('active')) {
+  if (e.key === 'Escape' && playlistOverlay && playlistOverlay.classList.contains('active')) {
     closePlaylist();
   }
 });
 
 // 3D 倾斜卡片效果
-const tiltCards = document.querySelectorAll('.skill-item, .about-card');
+const tiltCards = document.querySelectorAll('.skill-item, .about-card, .blog-card');
 tiltCards.forEach(item => {
   item.addEventListener('mousemove', (e) => {
     const rect = item.getBoundingClientRect();
@@ -698,27 +722,32 @@ const PARTICLE_CONFIG = {
 };
 
 const THEME_SHAPES = {
-  'theme-b': ['p-b-svgleaf', 'p-b-greenleaf', 'p-b-plant', 'p-b-flower', 'p-b-dew', 'p-b-cloud', 'p-b-grass', 'p-b-sun', 'p-b-twitter', 'p-b-love', 'p-b-music', 'p-b-bee', 'p-b-bush', 'p-b-clover'],
   'theme-c': ['p-c-Github', 'p-c-cplusplus', 'p-c-code1', 'p-c-code2', 'p-c-AE', 'p-c-ChatGPT', 'p-c-Linux', 'p-c-Claude', 'p-c-Python', 'p-c-Cli', 'p-c-VScode', 'p-c-Java', 'p-c-Grok', 'p-c-BTC', 'p-c-Dollar', 'p-c-Telegram', 'p-c-chrome'],
 };
 
+const THEME_IMAGES = {
+  'theme-b': [
+    'images/particles/QQ_1779802523257.png',
+    'images/particles/QQ_1779802532590.png',
+    'images/particles/QQ_1779802548736.png',
+    'images/particles/QQ_1779802552860.png',
+    'images/particles/QQ_1779802557726.png',
+    'images/particles/QQ_1779802563781.png',
+    'images/particles/QQ_1779802567899.png',
+    'images/particles/QQ_1779802583304.png',
+    'images/particles/QQ_1779802589346.png',
+    'images/particles/QQ_1779802594843.png',
+    'images/particles/QQ_1779802598886.png',
+  ],
+};
+
 const THEME_COLORS = {
-  'theme-b': ['#418A45', '#6B9B3E', '#8FBC8F', '#D4A574', '#A8C686', '#F0F5EB', '#E8F5E2', '#357239', '#4CAF50', '#EDF3E8', '#F5FAF2'],
   'theme-c': ['#f4edfe5f', '#9287ae73'],
 };
 
 function rand(min, max) { return Math.random() * (max - min) + min; }
 function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function darkenHex(hex, percent) {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.max((num >> 16) - amt, 0);
-  const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
-  const B = Math.max((num & 0x0000FF) - amt, 0);
-  return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
-}
-
 class Particle {
   constructor(el) {
     this.el = el;
@@ -729,41 +758,44 @@ class Particle {
   }
 
   setStyle(cfg, theme) {
-    const size = randInt(cfg.size.min, cfg.size.max);
-    const rawColor = pick(THEME_COLORS[theme]);
-    const color = (theme === 'theme-c') ? rawColor : darkenHex(rawColor, 25);
+    const maxSize = THEME_IMAGES[theme] ? 45 : cfg.size.max;
+    const size = randInt(cfg.size.min, maxSize);
     const left = rand(2, 95);
     const duration = rand(cfg.duration.min, cfg.duration.max);
     const delay = -rand(cfg.delay.min, cfg.delay.max);
     const startY = rand(cfg.startY.min, cfg.startY.max);
     const swayX = rand(cfg.swayX.min, cfg.swayX.max);
     const opacity = rand(cfg.opacity.min, cfg.opacity.max);
-    const rotation = rand(cfg.rotation.min, cfg.rotation.max);
-    const shape = pick(THEME_SHAPES[theme]);
 
     this.el.style.width = `${size}px`;
     this.el.style.height = `${size}px`;
     this.el.style.left = `${left}%`;
     this.el.style.animationDuration = `${duration}s`;
     this.el.style.animationDelay = `${delay}s`;
+    this.el.style.animationIterationCount = 'infinite';
     this.el.style.opacity = opacity;
     this.el.style.setProperty('--start-y', `${startY}vh`);
     this.el.style.setProperty('--sway-x', `${swayX}px`);
-    this.el.style.setProperty('--rotation', `${rotation}deg`);
+    this.el.style.setProperty('--rotation', `0deg`);
     this.el.style.setProperty('--mid-opacity', `${opacity}`);
-    this.el.style.background = '';
-    this.el.style.color = color;
 
-    this.el.className = `particle ${shape}`;
+    if (THEME_IMAGES[theme]) {
+      const img = pick(THEME_IMAGES[theme]);
+      this.el.style.background = `url('${img}') center/contain no-repeat`;
+      this.el.style.color = '';
+      this.el.className = 'particle p-image';
+    } else {
+      const color = pick(THEME_COLORS[theme] || ['#f4edfe5f', '#9287ae73']);
+      const shape = pick(THEME_SHAPES[theme] || ['p-c-Github']);
+      this.el.style.background = '';
+      this.el.style.color = color;
+      this.el.className = `particle ${shape}`;
+    }
 
     this.baseSwayX = swayX;
     this.currentSwayX = swayX;
     this.targetSwayX = swayX;
     this.baseOpacity = opacity;
-  }
-
-  update() {
-    // 鼠标交互已移除
   }
 }
 
@@ -926,6 +958,15 @@ const toolsData = [
 
 let currentToolsCategory = 0;
 
+function updateToolsTabIndicator() {
+  const bar = document.getElementById('toolsTabBar');
+  const indicator = bar && bar.querySelector('.tools-tab-indicator');
+  const active = bar && bar.querySelector('.tools-tab.active');
+  if (!indicator || !active) return;
+  indicator.style.left = active.offsetLeft + 'px';
+  indicator.style.width = active.offsetWidth + 'px';
+}
+
 function renderToolsTabBar() {
   const bar = document.getElementById('toolsTabBar');
   if (!bar) return;
@@ -937,6 +978,15 @@ function renderToolsTabBar() {
     btn.addEventListener('mouseenter', () => switchToolsCategory(idx));
     bar.appendChild(btn);
   });
+  // 创建滑动指示器
+  const indicator = document.createElement('div');
+  indicator.className = 'tools-tab-indicator';
+  bar.appendChild(indicator);
+  // 首次定位禁用过渡
+  indicator.style.transition = 'none';
+  updateToolsTabIndicator();
+  indicator.offsetHeight;
+  indicator.style.transition = '';
 }
 
 function renderToolsGrid() {
@@ -964,6 +1014,7 @@ function switchToolsCategory(idx) {
   document.querySelectorAll('.tools-tab').forEach((btn, i) => {
     btn.classList.toggle('active', i === idx);
   });
+  requestAnimationFrame(() => updateToolsTabIndicator());
 
   const card = document.querySelector('.tools-card');
   if (card) {
@@ -997,6 +1048,7 @@ window.addEventListener('resize', () => {
       card.style.height = newH + 'px';
     }
   }
+  updateToolsTabIndicator();
 });
 
 // 初始化工具页面
@@ -1007,7 +1059,7 @@ if (document.getElementById('toolsTabBar')) {
 
 // ===== hero 入场序列 =====
 const heroSubtitle = document.getElementById('heroSubtitle');
-const subtitleLines = ['城市热能专业在读 · AI 学习者 · 技术探索者', '从代码到 AI提示词，持续折腾中...'];
+const subtitleLines = ['AI学习者 · 技术探索者', '从代码到AI提示词，持续折腾中...'];
 let entranceTimers = [];
 
 function buildHeroChars() {

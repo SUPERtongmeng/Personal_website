@@ -168,7 +168,7 @@
 | 导航链接 | 桌面 `1rem` / 移动 `0.8rem` |
 | 联系表单输入 | `0.9rem` |
 | 联系表单按钮 | `1rem` |
-| 工具标签 `.tools-tab` | 桌面 `0.9rem` / 移动 `0.82rem` |
+| 工具标签 `.tools-tab`（分段控件）| 桌面 `0.9rem` / 移动 `0.82rem` |
 | 工具磁贴名称 | `0.82rem` |
 | 页脚品牌 | `1.45rem` |
 | 页脚链接 | `0.92rem` |
@@ -298,8 +298,10 @@
 | 元素 | 值 |
 |---|---|
 | 卡片 padding | `32px 36px 42px` |
-| 标签栏 gap | 桌面 `10px` / 移动 `8px` |
-| 标签 padding | 桌面 `10px 22px` / 移动 `8px 16px` |
+| 分段控件容器 padding | `4px` |
+| 分段控件 gap | 桌面 `4px` / 移动 `8px` |
+| 分段标签 padding | 桌面 `10px 22px` / 移动 `8px 16px` |
+| 滑动指示器 transition | `left 0.3s, width 0.3s`（cubic-bezier `0.25, 0.46, 0.45, 0.94`）|
 | 网格 gap | `24px`（移动 `16px`）|
 | 网格 minmax | `minmax(130px, 1fr)`（移动 `100px`）|
 | 磁贴 padding | `16px 12px` |
@@ -366,7 +368,8 @@
 | `40px` | 音乐播放器卡片（收起/展开通用）|
 | `20px` (`--radius`) | 所有玻璃卡片 |
 | `16px` | 工具磁贴 |
-| `14px` | 工具标签 |
+| `14px` | 分段控件容器 |
+| `12px` | 分段标签 & 滑动指示器 |
 | `12px` | 表单输入框/textarea/按钮、模态内容、曲库列表项、Toast |
 | `10px` | 滚动指示器外框 |
 | `8px` | 技能图标容器 |
@@ -389,7 +392,7 @@
 | 模态叠加层 | `rgba(0,0,0,0.25)` | `blur(6px)` | — |
 | 曲库叠加层 | `rgba(0,0,0,0.25)` | `blur(8px)` | — |
 | Toast | — | `blur(12px)` | — |
-| 工具标签 | — | `blur(12px)` | — |
+| 分段控件容器 | — | `blur(10px)` | — |
 | 工具磁贴图片框 | — | `blur(16px)` | — |
 | 回到顶部 | — | `blur(8px)` | — |
 
@@ -494,7 +497,8 @@ box-shadow: 0 0 30px var(--glow-color-1), 0 0 60px var(--glow-color-3);
 | 工具磁贴图片框 | `0 6px 20px var(--glass-shadow)`（悬停 `0 8px 28px`）|
 | 博客"更多"按钮悬停 | `0 4px 16px var(--glass-shadow)` |
 | 表单输入 focus | `0 0 0 3px rgba(212,181,226,0.15)` |
-| 工具标签（active）| `0 4px 16px rgba(65,138,69,0.3)` |
+| 滑动指示器（theme-c）| `0 2px 12px rgba(81,34,224,0.4)` |
+| 滑动指示器（theme-b）| `0 2px 8px rgba(228,170,179,0.35)` |
 
 ### 6.5 区块标题发光
 
@@ -610,7 +614,7 @@ opacity: 0 → 1（hover 时 0.4s ease）
 | 音乐按钮 | 放大 + 背景 | `scale(1.1)` + `rgba(255,182,193,0.35)`，`0.2s` transform |
 | 博客卡片 | 上浮 + 阴影 | `translateY(-6px)` + `0 12px 40px` 阴影 |
 | 博客"更多"按钮 | 上浮 + 箭头 | `translateY(-2px)` + 箭头 `translateX(4px)` |
-| 工具标签 | 上浮 | `translateY(-2px)` |
+| 工具标签 | 文字颜色切换 | `color 0.3s ease` |
 | 工具磁贴 | 上浮 | `translateY(-6px)` |
 | 曲库列表项 | 右移 | `translateX(3px)`，`0.2s ease` |
 | 提交按钮 | 上浮 + 阴影 | `translateY(-2px)` + `0 8px 24px` 阴影 |
@@ -624,7 +628,7 @@ opacity: 0 → 1（hover 时 0.4s ease）
 | 播放按钮 → 点击 | 播放/暂停切换 |
 | 上一首/下一首 → 点击 | 切歌 + 切换主题 |
 | 歌名 → 点击 | （已移除）|
-| 工具标签 → 点击 | 筛选工具分类，切换 active 样式（渐变背景 + 白色文字）|
+| 工具标签 → hover | 切换分类，滑动指示器跟随移动 + 卡片高度动画 |
 | 博客卡片 → 点击 | 打开文章模态框 |
 | 博客"更多" → 点击 | 展开更多文章卡片 |
 | 表单提交按钮 → 点击 | 发送表单（60s 冷却）|
@@ -746,8 +750,10 @@ opacity: 0 → 1（hover 时 0.4s ease）
   .about-grid, .contact-wrap { grid-template-columns: 1fr; }
   section { padding: 60px 12px; }
   .about-grid, .skills-grid { gap: 24px; }
-  .tools-tab-bar { gap: 8px; }
-  .tools-tab { padding: 8px 16px; font-size: 0.82rem; }
+  .tools-tab-bar { gap: 8px; background: transparent; border: none; backdrop-filter: none; }
+  .tools-tab-indicator { display: none; }
+  .tools-tab { padding: 8px 16px; font-size: 0.82rem; border: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 14px; }
+  .tools-tab.active { background: linear-gradient(135deg, var(--pink), var(--lavender)); border-color: transparent; color: white; }
   .tools-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px; }
   .bg-grid { --grid-size: 34px; }
   .orbit-ring { display: none; }
