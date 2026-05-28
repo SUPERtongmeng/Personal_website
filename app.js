@@ -17,19 +17,21 @@
   }
   chars.forEach((el, i) => { if (colors[i]) el.style.color = colors[i]; });
 
-  // 跟踪页面资源（图片、样式表等）
-  const resources = document.querySelectorAll('img');
-  let loaded = 0;
-  const total = resources.length + 1; // +1 代表文档本身
-
-  resources.forEach(img => {
-    if (img.complete) loaded++;
-    else img.addEventListener('load', () => loaded++);
-  });
+  function countLoadedResources() {
+    const entries = performance.getEntriesByType('resource');
+    let loaded = 1; // 当前文档
+    let total = 1;
+    if (entries.length > 0) {
+      // responseEnd > 0 means the resource finished loading
+      total += entries.length;
+      loaded += entries.filter(e => e.responseEnd > 0).length;
+    }
+    return { loaded, total };
+  }
 
   function updateProgress() {
     const ready = document.readyState;
-    // loading ~ 0-20%, interactive ~ 20-90%, complete = 100%
+    const { loaded, total } = countLoadedResources();
     let progress = loaded / Math.max(total, 1);
     if (ready === 'loading') progress = Math.min(progress, 0.25);
     else if (ready === 'interactive') progress = Math.max(progress, 0.35);
@@ -82,6 +84,72 @@ const skillObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.5 });
 skillFills.forEach(el => skillObserver.observe(el));
+
+// ===== 暗色/亮色模式切换 =====
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+
+  const setAriaLabel = () => {
+    const theme = document.body.getAttribute('data-music-theme') || 'light';
+    btn.setAttribute('aria-label', theme === 'dark' ? '切换为亮色模式' : '切换为暗色模式');
+  };
+
+  if (localStorage.getItem('theme-scheme') === 'dark') {
+    switchMusicTheme('dark');
+  }
+  setAriaLabel();
+
+  btn.addEventListener('click', () => {
+    const current = document.body.getAttribute('data-music-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme-scheme', next);
+    switchMusicTheme(next);
+    setAriaLabel();
+  });
+
+  // ===== 汉堡菜单（移动端） =====
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const navLinksEl = document.querySelector('.nav-links');
+
+  if (hamburgerBtn && navLinksEl) {
+    let menuOpen = false;
+
+    function openMenu() {
+      menuOpen = true;
+      hamburgerBtn.classList.add('active');
+      hamburgerBtn.setAttribute('aria-expanded', 'true');
+      navLinksEl.classList.add('nav-open');
+      document.body.classList.add('nav-menu-open');
+    }
+
+    function closeMenu() {
+      menuOpen = false;
+      hamburgerBtn.classList.remove('active');
+      hamburgerBtn.setAttribute('aria-expanded', 'false');
+      navLinksEl.classList.remove('nav-open');
+      document.body.classList.remove('nav-menu-open');
+    }
+
+    hamburgerBtn.addEventListener('click', () => {
+      menuOpen ? closeMenu() : openMenu();
+    });
+
+    navLinksEl.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => closeMenu());
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuOpen) closeMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (menuOpen && !navLinksEl.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+        closeMenu();
+      }
+    });
+  }
+});
 
 const navbar = document.getElementById('navbar');
 const scrollIndicator = document.querySelector('.scroll-indicator');
@@ -156,8 +224,14 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     e.preventDefault();
     const target = document.querySelector(link.getAttribute('href'));
     if (target) {
-      const offset = 130// ← 改这个值调整滚动位置
+      const offset = 130;// ← 改这个值调整滚动位置
       window.scrollTo({ top: target.offsetTop - offset, behavior: 'smooth' });
+      // 滚动后将焦点移到目标区域
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+      target.addEventListener('blur', () => {
+        target.removeAttribute('tabindex');
+      }, { once: true });
     }
   });
 });
@@ -296,21 +370,69 @@ const blogData = [
 const modal = document.getElementById('modal');
 const modalClose = document.getElementById('modalClose');
 if (modal && modalClose) {
+  let lastFocusedElement = null;
+
   document.querySelectorAll('.blog-card').forEach(card => {
     card.addEventListener('click', () => {
+      lastFocusedElement = document.activeElement;
       const idx = parseInt(card.dataset.article);
       const article = blogData[idx];
       document.getElementById('modalTitle').textContent = article.title;
       document.getElementById('modalBody').textContent = article.body;
       modal.classList.add('active');
+      setTimeout(() => modalClose.focus(), 50);
+    });
+
+    // Keyboard: Enter / Space to activate
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.click();
+      }
     });
   });
 
-  modalClose.addEventListener('click', () => {
+  function closeModal() {
     modal.classList.remove('active');
+    if (lastFocusedElement) {
+      lastFocusedElement.focus();
+      lastFocusedElement = null;
+    }
+  }
+
+  modalClose.addEventListener('click', () => {
+    closeModal();
   });
   modal.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) modal.classList.remove('active');
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  // Escape key + focus trap
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const focusable = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   });
 }
 
@@ -369,20 +491,11 @@ const playlist = [
     artist: 'keshi',
     cover: 'images/cover-b.jpg?v=2',
     src: './music/magnolia.mp3',
-    theme: 'theme-b'
-  },
-  {
-    name: 'shelter',
-    artist: 'hakaisu / Alys',
-    cover: 'https://p2.music.126.net/sdbcH2bH-t-6wU9J-DK82w==/109951163020032493.jpg?param=200y200',
-    src: './music/shelter.mp3',
-    theme: 'theme-c'
   },
 ];
 
-let currentTrack = 0;
 let isPlaying = false;
-let isTransitioning = false; // 切歌防抖
+let isTransitioning = false;
 
 const heroMusic = document.getElementById('heroMusic');
 const heroMusicName = document.getElementById('heroMusicName');
@@ -432,19 +545,9 @@ function initAudioElement() {
   }
 
   audioElement.addEventListener('ended', () => {
-    if (isTransitioning) return;
-    isTransitioning = true;
-    stopPlayback();
-    isPlaying = false;
-    heroMusicCover.classList.remove('spinning');
-    heroMusic.classList.remove('playing');
-    currentTrack = (currentTrack + 1) % playlist.length;
-    loadTrack(currentTrack);
-    isPlaying = true;
-    heroMusicCover.style.animationPlayState = 'running';
-    heroMusic.classList.add('playing');
+    // 单曲循环
+    audioElement.currentTime = 0;
     startPlayback();
-    setTimeout(() => { isTransitioning = false; }, 300);
   });
 }
 
@@ -473,19 +576,19 @@ function stopPlayback() {
 }
 
 const ORBIT_DOT_SHAPES = {
-  'theme-b': [
-    { cls: 'p-b-svgleaf', color: '#E4AAB3', size: 36 },
-    { cls: 'p-b-flower',  color: '#D4A0B0', size: 36 },
+  'light': [
+    { cls: 'p-l-svgleaf', color: '#E4AAB3', size: 36 },
+    { cls: 'p-l-flower',  color: '#D4A0B0', size: 36 },
   ],
-  'theme-c': [
-    { cls: 'p-c-Claude', color: '#f4edfe5f', size: 36 },
-    { cls: 'p-c-ChatGPT',  color: '#9287ae73', size: 36 },
+  'dark': [
+    { cls: 'p-d-Claude', color: '#f4edfe5f', size: 36 },
+    { cls: 'p-d-ChatGPT',  color: '#9287ae73', size: 36 },
   ],
 };
 
 function refreshOrbitDots() {
-  const theme = document.body.getAttribute('data-music-theme') || 'theme-b';
-  const shapes = ORBIT_DOT_SHAPES[theme] || ORBIT_DOT_SHAPES['theme-b'];
+  const theme = document.body.getAttribute('data-music-theme') || 'light';
+  const shapes = ORBIT_DOT_SHAPES[theme] || ORBIT_DOT_SHAPES['light'];
   const dots = document.querySelectorAll('.orbit-dot');
 
   dots.forEach((dot, i) => {
@@ -507,9 +610,27 @@ function switchMusicTheme(targetTheme) {
   const currentTheme = body.getAttribute('data-music-theme');
   if (currentTheme === targetTheme) return;
 
-  body.setAttribute('data-music-theme', targetTheme);
-  if (window.particleController) window.particleController.refresh();
-  refreshOrbitDots();
+  // 捕获按钮位置用于聚光灯动画
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const x = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
+    const y = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
+    document.documentElement.style.setProperty('--spotlight-x', x + '%');
+    document.documentElement.style.setProperty('--spotlight-y', y + '%');
+  }
+
+  const applyTheme = () => {
+    body.setAttribute('data-music-theme', targetTheme);
+    if (window.particleController) window.particleController.refresh();
+    refreshOrbitDots();
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(() => applyTheme());
+  } else {
+    applyTheme();
+  }
 }
 
 function loadTrack(idx) {
@@ -530,8 +651,6 @@ function loadTrack(idx) {
 
   initAudioElement();
   audioElement.src = t.src;
-
-  if (t.theme) switchMusicTheme(t.theme);
 }
 
 loadTrack(0);
@@ -539,6 +658,7 @@ loadTrack(0);
 function togglePlay() {
   isPlaying = !isPlaying;
   heroMusicPlay.innerHTML = isPlaying ? pauseIcon : playIcon;
+  heroMusicPlay.setAttribute('aria-label', isPlaying ? '暂停' : '播放');
   heroMusic.classList.toggle('playing', isPlaying);
 
   if (isPlaying) {
@@ -550,32 +670,14 @@ function togglePlay() {
   }
 }
 
-function nextTrack() {
+function restartTrack() {
   if (isTransitioning) return;
   isTransitioning = true;
   stopPlayback();
   isPlaying = false;
   heroMusicPlay.innerHTML = playIcon;
   heroMusic.classList.remove('playing');
-  currentTrack = (currentTrack + 1) % playlist.length;
-  loadTrack(currentTrack);
-  isPlaying = true;
-  heroMusicPlay.innerHTML = pauseIcon;
-  heroMusicCover.style.animationPlayState = 'running';
-  heroMusic.classList.add('playing');
-  startPlayback();
-  setTimeout(() => { isTransitioning = false; }, 300);
-}
-
-function prevTrack() {
-  if (isTransitioning) return;
-  isTransitioning = true;
-  stopPlayback();
-  isPlaying = false;
-  heroMusicPlay.innerHTML = playIcon;
-  heroMusic.classList.remove('playing');
-  currentTrack = (currentTrack - 1 + playlist.length) % playlist.length;
-  loadTrack(currentTrack);
+  loadTrack(0);
   isPlaying = true;
   heroMusicPlay.innerHTML = pauseIcon;
   heroMusicCover.style.animationPlayState = 'running';
@@ -594,96 +696,23 @@ if (heroMusicPlay) {
 if (heroMusicNext) {
   heroMusicNext.addEventListener('click', (e) => {
     e.stopPropagation();
-    nextTrack();
+    restartTrack();
   });
 }
 if (heroMusicPrev) {
   heroMusicPrev.addEventListener('click', (e) => {
     e.stopPropagation();
-    prevTrack();
+    restartTrack();
   });
 }
 
-// ========== 曲库弹窗 ==========
-const playlistOverlay = document.getElementById('playlistOverlay');
-const playlistClose = document.getElementById('playlistClose');
-const playlistList = document.getElementById('playlistList');
-
-function openPlaylist() {
-  playlistOverlay.classList.add('active');
-  renderPlaylist(playlist);
-}
-
-function closePlaylist() {
-  playlistOverlay.classList.remove('active');
-}
-
-function renderPlaylist(data) {
-  playlistList.innerHTML = '';
-  if (data.length === 0) {
-    playlistList.innerHTML = '<div class="playlist-empty">未找到匹配的歌曲 😢</div>';
-    return;
-  }
-  data.forEach((track) => {
-    const realIdx = playlist.indexOf(track);
-    const item = document.createElement('div');
-    item.className = 'playlist-item' + (realIdx === currentTrack ? ' active' : '');
-    item.dataset.theme = track.theme || 'theme-b';
-    const coverHtml = `<img src="${track.cover}" alt="${track.name}">`;
-    item.innerHTML = `
-      <div class="playlist-item-cover">${coverHtml}</div>
-      <div class="playlist-item-info">
-        <span class="playlist-item-name">${track.name}</span>
-        <span class="playlist-item-artist">${track.artist}</span>
-      </div>
-    `;
-    item.addEventListener('click', () => selectSong(realIdx));
-    playlistList.appendChild(item);
-  });
-}
-
-function selectSong(idx) {
-  if (idx === currentTrack || isTransitioning) {
-    closePlaylist();
-    return;
-  }
-  isTransitioning = true;
-  stopPlayback();
-  isPlaying = false;
-  heroMusicPlay.innerHTML = playIcon;
-  heroMusic.classList.remove('playing');
-  currentTrack = idx;
-  loadTrack(currentTrack);
-  isPlaying = true;
-  heroMusicPlay.innerHTML = pauseIcon;
-  heroMusicCover.style.animationPlayState = 'running';
-  heroMusic.classList.add('playing');
-  startPlayback();
-  closePlaylist();
-  setTimeout(() => { isTransitioning = false; }, 300);
-}
-
+// 点击封面切换播放/暂停
 if (heroMusicCover) {
   heroMusicCover.addEventListener('click', (e) => {
     e.stopPropagation();
-    openPlaylist();
+    togglePlay();
   });
 }
-
-if (playlistClose) {
-  playlistClose.addEventListener('click', closePlaylist);
-}
-if (playlistOverlay) {
-  playlistOverlay.addEventListener('click', (e) => {
-    if (e.target === playlistOverlay) closePlaylist();
-  });
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && playlistOverlay && playlistOverlay.classList.contains('active')) {
-    closePlaylist();
-  }
-});
 
 // 3D 倾斜卡片效果
 const tiltCards = document.querySelectorAll('.skill-item, .about-card, .blog-card');
@@ -722,11 +751,11 @@ const PARTICLE_CONFIG = {
 };
 
 const THEME_SHAPES = {
-  'theme-c': ['p-c-Github', 'p-c-cplusplus', 'p-c-code1', 'p-c-code2', 'p-c-AE', 'p-c-ChatGPT', 'p-c-Linux', 'p-c-Claude', 'p-c-Python', 'p-c-Cli', 'p-c-VScode', 'p-c-Java', 'p-c-Grok', 'p-c-BTC', 'p-c-Dollar', 'p-c-Telegram', 'p-c-chrome'],
+  'dark': ['p-d-Github', 'p-d-cplusplus', 'p-d-code1', 'p-d-code2', 'p-d-AE', 'p-d-ChatGPT', 'p-d-Linux', 'p-d-Claude', 'p-d-Python', 'p-d-Cli', 'p-d-VScode', 'p-d-Java', 'p-d-Grok', 'p-d-BTC', 'p-d-Dollar', 'p-d-Telegram', 'p-d-chrome'],
 };
 
 const THEME_IMAGES = {
-  'theme-b': [
+  'light': [
     'images/particles/QQ_1779802523257.png',
     'images/particles/QQ_1779802532590.png',
     'images/particles/QQ_1779802548736.png',
@@ -742,7 +771,7 @@ const THEME_IMAGES = {
 };
 
 const THEME_COLORS = {
-  'theme-c': ['#f4edfe5f', '#9287ae73'],
+  'dark': ['#f4edfe5f', '#9287ae73'],
 };
 
 function rand(min, max) { return Math.random() * (max - min) + min; }
@@ -786,7 +815,7 @@ class Particle {
       this.el.className = 'particle p-image';
     } else {
       const color = pick(THEME_COLORS[theme] || ['#f4edfe5f', '#9287ae73']);
-      const shape = pick(THEME_SHAPES[theme] || ['p-c-Github']);
+      const shape = pick(THEME_SHAPES[theme] || ['p-d-Github']);
       this.el.style.background = '';
       this.el.style.color = color;
       this.el.className = `particle ${shape}`;
@@ -812,7 +841,13 @@ class ParticleController {
   }
 
   getTheme() {
-    return document.body.getAttribute('data-music-theme') || 'theme-b';
+    return document.body.getAttribute('data-music-theme') || 'light';
+  }
+
+  _getCount() {
+    if (window.innerWidth < 480) return 8;
+    if (window.innerWidth < 768) return 13;
+    return PARTICLE_CONFIG.count;
   }
 
   init() {
@@ -820,7 +855,7 @@ class ParticleController {
     this.particles = [];
     const theme = this.getTheme();
 
-    for (let i = 0; i < PARTICLE_CONFIG.count; i++) {
+    for (let i = 0; i < this._getCount(); i++) {
       const el = document.createElement('div');
       this.container.appendChild(el);
       const p = new Particle(el);
@@ -975,7 +1010,34 @@ function renderToolsTabBar() {
     const btn = document.createElement('button');
     btn.className = 'tools-tab' + (idx === currentToolsCategory ? ' active' : '');
     btn.textContent = cat.category;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', idx === currentToolsCategory ? 'true' : 'false');
+    btn.setAttribute('id', `tools-tab-${cat.id}`);
+    btn.setAttribute('aria-controls', 'toolsGrid');
+
+    btn.addEventListener('click', () => switchToolsCategory(idx));
     btn.addEventListener('mouseenter', () => switchToolsCategory(idx));
+
+    // Keyboard: ArrowLeft/ArrowRight navigation within tablist
+    btn.addEventListener('keydown', (e) => {
+      const tabs = bar.querySelectorAll('[role="tab"]');
+      const currentIdx = Array.from(tabs).indexOf(document.activeElement);
+      let newIdx = currentIdx;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        newIdx = (currentIdx + 1) % tabs.length;
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        newIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+      }
+
+      if (newIdx !== currentIdx && newIdx >= 0) {
+        tabs[newIdx].focus();
+        switchToolsCategory(newIdx);
+      }
+    });
+
     bar.appendChild(btn);
   });
   // 创建滑动指示器
@@ -1003,17 +1065,24 @@ function renderToolsGrid() {
     a.innerHTML = `
       <div class="tools-tile-img-box"><img src="${item.icon}" alt="${item.name}" loading="lazy"></div>
       <span class="tools-tile-name">${item.name}</span>
+      <span class="sr-only">（新窗口打开）</span>
     `;
     grid.appendChild(a);
   });
 }
 
 function switchToolsCategory(idx) {
-  if (idx === currentToolsCategory) return;
+  if (idx === currentToolsCategory && document.querySelector('.tools-tab.active')) return;
   currentToolsCategory = idx;
   document.querySelectorAll('.tools-tab').forEach((btn, i) => {
     btn.classList.toggle('active', i === idx);
+    btn.setAttribute('aria-selected', i === idx ? 'true' : 'false');
   });
+  const grid = document.getElementById('toolsGrid');
+  if (grid) {
+    const cat = toolsData[idx];
+    grid.setAttribute('aria-labelledby', `tools-tab-${cat.id}`);
+  }
   requestAnimationFrame(() => updateToolsTabIndicator());
 
   const card = document.querySelector('.tools-card');
@@ -1060,8 +1129,6 @@ if (document.getElementById('toolsTabBar')) {
 // ===== hero 入场序列 =====
 const heroSubtitle = document.getElementById('heroSubtitle');
 const subtitleLines = ['AI学习者 · 技术探索者', '从代码到AI提示词，持续折腾中...'];
-let entranceTimers = [];
-
 function buildHeroChars() {
   if (!heroSubtitle) return;
   heroSubtitle.innerHTML = '';
@@ -1079,17 +1146,12 @@ function buildHeroChars() {
 }
 
 function startEntrance() {
-  // clear pending
-  entranceTimers.forEach(t => clearTimeout(t));
-  entranceTimers = [];
-
-  // reset all
   document.querySelectorAll('.enter, .char, .avatar-orbit').forEach(el => {
     el.classList.remove('visible');
   });
 
   const addTimer = (fn, delay) => {
-    entranceTimers.push(setTimeout(fn, delay));
+    setTimeout(fn, delay);
   };
 
   // 1. nav slide down + greeting slide down
@@ -1140,6 +1202,7 @@ buildHeroChars();
 const backToTop = document.createElement('button');
 backToTop.id = 'backToTop';
 backToTop.innerHTML = '↑';
+backToTop.setAttribute('aria-label', '返回顶部');
 backToTop.style.cssText = 'position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,0.4);color:#fff;font-size:20px;cursor:pointer;opacity:0;transition:opacity 0.3s,transform 0.3s;z-index:100;backdrop-filter:blur(8px);';
 document.body.appendChild(backToTop);
 
@@ -1173,10 +1236,11 @@ document.addEventListener('keydown', (e) => {
   // ← / →: 上一首 / 下一首
   if (e.key === 'ArrowLeft' && e.altKey) {
     e.preventDefault();
-    prevTrack();
+    restartTrack();
   }
   if (e.key === 'ArrowRight' && e.altKey) {
     e.preventDefault();
-    nextTrack();
+    restartTrack();
   }
 });
+
